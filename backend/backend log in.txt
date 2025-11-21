@@ -1,0 +1,61 @@
+- Open in VS Code
+
+- Open in Integrated Terminal
+
+- Run:
+python -m venv venv
+
+- Enter new environment:
+# Windows:
+venv\Scripts\activate
+or
+venv\Scripts\activate.ps1
+# Mac/Linux:
+source venv/bin/activate
+
+- Confirmation: should see something like:
+(venv) yourname@computer backend %
+
+- Next, run:
+pip install -r requirements.txt
+
+- Copy .env.example, SAVE ONTO YOUR OWN COMPUTER
+# Windows (PowerShell)"
+copy .env.example .env
+# Mac or Linux:
+cp .env.example .env  # fill in values
+
+- Edit .env with personal values
+  - Open .env in editor
+  - Edit following fields:
+    - user
+    - password
+    - run : CREATE DATABASE ezamu;
+    - if python is installed, run "python -c "import secrets; print(secrets.token_hex(32))"
+      and replace in SECRET_KEY
+
+- Ensure PostgreSQL is running:
+psql -U your_username -d ezamu
+
+- Reload and run:
+uvicorn app.main:app --reload
+
+- Confirmation: should see something like:
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+
+- Test:
+Open a browser and go to:
+
+API root: http://localhost:8000/health
+
+You should see:
+
+{ "status": "ok" }
+
+API docs: http://localhost:8000/docs
+
+You should see the interactive Swagger UI with endpoints like /auth/register.
+
+
+Backend will be at: http://localhost:8000
+Frontend (unchanged) runs via npm run dev on http://localhost:5173.
