@@ -190,8 +190,159 @@ function LandingPage() {
 
 
         {/* 3. SOLUTION / VALUE PROP SECTION ------------------------------------------------------------------------------------------------------------*/}
+{/* 3. SOLUTION / VALUE PROP SECTION ------------------------------------------------------------------------------------------------------------*/}
+        <section style = {{ marginBottom: "3.5rem"}}>
+          <h2
+            style={{
+              fontSize: "1.5rem",
+              marginBottom: "0.75rem"
+            }}
+            >
+              A Clear Path for You, All in One Simple, Easy-to-use Platform
+            </h2>
+            <p style={{ marginBottom: "1.2rem", fontSize: "0.98rem", maxWidth: "720px"}}>
+              We will give you all the tools you need to plan what your future career could look like.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "1.5rem"
+              }}
+              >
+                <div
+                  style={{
+                    flex: "1 1 260px",
+                    background: "#f44336",
+                    border: "1px solid #ffcccc",
+                    padding: "1.2rem", 
+                    borderRadius: "0.75rem"
+                  }}
+                  >
+                    <h3 style={{ fontSize: "1.1rem", marginBottom: "0.4rem"}}>Personalized Guidance</h3>
+                    <p style={{ fontSize: "0.92rem", lineHeight: 1.6}}>
+                      Discover careers, majors, and courses that are tailored to you, based on your interests and strengths.
+                    </p>
+                </div>
+                <div
+                  style={{
+                    flex: "1 1 260px",
+                    background: "#f44336",
+                    border: "1px solid #ffcccc",
+                    padding: "1.2rem",
+                    borderRadius: "0.75rem"
+                  }}
+                >
+                  <h3 style={{ fontSize: "1.1rem", marginBottom: "0.4rem"}}>One-Stop-Shop for all your College and Career Planning</h3>
+                  <p style={{ fontSize: "0.92rem", lineHeight: 1.6}}>
+                    Get everything in one place, without juggling any more platforms.
+                  </p>
+                </div>
+            </div>
+            <h2
+              style={{
+                fontSize: "1.5rem",
+                marginBottom: "0.75rem",
+                marginTop: "2rem",
+              }}
+            >
+              Don't just take our word for it! We are more than what meets the eye.
+            </h2>
+            <ul
+              style={{
+                lineHeight: 1.9,
+                fontSize: "0.95rem",
+                paddingLeft: "1.2rem"
+              }}
+            >
+              <li><strong>Benefit 1:</strong> Consolidate all of your options to learn what works best for you and your lifestyle!</li>
+              <li><strong>Benefit 1:</strong> Ask questions without the fear of judgement. We are here for you, and you only!</li>
+              <li><strong>Benefit 1:</strong> Use our mentors' expertise to your advantage, without having to search!  </li>
+            </ul>
+        </section>
 
         {/* 4. SOCIAL PROOF SECTION ------------------------------------------------------------------------------------------------------------*/}
+        <section style={{ marginBottom: "3.5rem"}}>
+          <h2
+            style={{
+              fontSize: "1.5rem", 
+              marginBottom: "1rem"
+            }}
+          >
+            Trusted by Students, Families, Mentors and Counselors.
+          </h2>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "1.5rem",
+              alighItems: "stretch",
+            }}
+          >
+            <div
+              style={{
+                flex: "1 1 300px",
+                padding: "1.2rem",
+                border: "1px solid #ddd",
+                borderRadius: "0.75rem",
+                background: "#f6843dff",
+              }}
+            >
+              <p style={{ fontStyle: "italic", marginBottom: "0.75rem"}}>
+                "I used to worry about what my career path would look like. But now I have mentors and counselors guiding me."
+              </p>
+              <p style={{fontWeight: 600}}>-Alexis, 11th Grade</p>
+            </div>
+            
+            <div
+              style={{
+                flex: "1 1 300px",
+                padding: "1.2rem",
+                border: "1px solid #ddd",
+                borderRadius: "0.75rem",
+                background: "#f6843dff",
+              }}
+            >
+              <p style={{ fontStyle: "italic", marginBottom: "0.75rem"}}>
+                "As a mentor, I see what a difference Ezamu makes in students' lives, and I love being part of it."
+              </p>
+              <p style={{fontWeight: 600}}>-Marcus, STEM Mentor</p>
+            </div>
+
+            <div
+              style={{
+                flex: "1 1 300px",
+                padding: "1.2rem",
+                border: "1px solid #ddd",
+                borderRadius: "0.75rem",
+                background: "#f6843dff",
+              }}
+            >
+              <p style={{ fontStyle: "italic", marginBottom: "0.75rem"}}>
+                "I'm so grateful to Ezamu for helping us unlock our child's potential, in a time where we were uncertain."
+              </p>
+              <p style={{fontWeight: 600}}>-Farina, Parent of High Schooler</p>
+            </div>
+
+            <div
+              style={{
+                flex: "1 1 300px",
+                padding: "1.2rem",
+                border: "1px solid #ccc",
+                borderRadius: "0.75rem",
+                background: "#ffaf87ff",
+              }}
+            >
+              <p style={{ marginBottom: "0.75rem"}}>
+                ⭐<strong>4.9/5</strong> average student satisfaction
+                <br />
+                👥<strong>2500+</strong> mentor-mentee matches
+                <br />
+                🎓 Students from <strong>120+ schools</strong>
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* 5. HOW IT WORKS SECTION ------------------------------------------------------------------------------------------------------------*/}
 
