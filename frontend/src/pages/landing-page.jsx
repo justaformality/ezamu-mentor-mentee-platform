@@ -345,8 +345,231 @@ function LandingPage() {
         </section>
 
         {/* 5. HOW IT WORKS SECTION ------------------------------------------------------------------------------------------------------------*/}
+      <section style={{ marginBottom: "3.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.5rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            How Ezamu Mentor Connect Works
+          </h2>
 
+          <p
+            style={{
+              maxWidth: "640px",
+              fontSize: "0.98rem",
+              lineHeight: 1.6,
+              marginBottom: "1.5rem",
+            }}
+          >
+            In just a few steps, students move from feeling overwhelmed about
+            college and careers to having a clear, guided plan and a supportive
+            team behind them.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "1.5rem",
+            }}
+          >
+            {/* Step 1 */}
+            <div
+              style={{
+                flex: "1 1 260px",
+                minWidth: "220px",
+                padding: "1.5rem",
+                borderRadius: "1rem",
+                border: "1px solid #ffe0d5",
+                background: "#fff7f4",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "#f44336",
+                  marginBottom: "0.4rem",
+                }}
+              >
+                Step 1
+              </p>
+              <h3
+                style={{
+                  fontSize: "1.05rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Tell us who you are
+              </h3>
+              <p style={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
+                Share your interests, goals, and questions so we can understand
+                where you are in your college and career journey.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div
+              style={{
+                flex: "1 1 260px",
+                minWidth: "220px",
+                padding: "1.5rem",
+                borderRadius: "1rem",
+                border: "1px solid #ffe0d5",
+                background: "#fff7f4",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "#f44336",
+                  marginBottom: "0.4rem",
+                }}
+              >
+                Step 2
+              </p>
+              <h3
+                style={{
+                  fontSize: "1.05rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Get matched with your support team
+              </h3>
+              <p style={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
+                We match you with mentors, near-peers, and coaches who
+                understand your background and goals, so you&apos;re never
+                planning alone.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div
+              style={{
+                flex: "1 1 260px",
+                minWidth: "220px",
+                padding: "1.5rem",
+                borderRadius: "1rem",
+                border: "1px solid #ffe0d5",
+                background: "#fff7f4",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "#f44336",
+                  marginBottom: "0.4rem",
+                }}
+              >
+                Step 3
+              </p>
+              <h3
+                style={{
+                  fontSize: "1.05rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Follow your guided plan
+              </h3>
+              <p style={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
+                Work through clear S.M.A.R.T. goals, scholarship searches, and
+                application milestones with regular check-ins from your Ezamu
+                team.
+              </p>
+            </div>
+          </div>
+        </section>  
         {/* 6. CALL TO ACTION SECTION ------------------------------------------------------------------------------------------------------------*/}
+        <section
+          style={{
+            padding: "2.75rem 2.25rem",
+            borderRadius: "1.5rem",
+            background:
+              "linear-gradient(135deg, rgba(244,67,54,0.06), rgba(244,67,54,0.16))",
+            textAlign: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.7rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            Ready to give students a clearer path to college and careers?
+          </h2>
+
+          <p
+            style={{
+              fontSize: "0.98rem",
+              lineHeight: 1.7,
+              maxWidth: "640px",
+              margin: "0 auto 1.75rem",
+            }}
+          >
+            Bring together expert mentors, near-peers, and powerful planning
+            tools in one simple platform. Start with a low-stress, high-support
+            experience that meets students where they are.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "0.75rem",
+            }}
+          >
+            <Link
+              to="/signup"
+              style={{
+                padding: "0.85rem 1.9rem",
+                borderRadius: "999px",
+                border: "none",
+                backgroundColor: "#f44336",
+                color: "#ffffff",
+                textDecoration: "none",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+              }}
+            >
+              Get Matched with a Coach
+            </Link>
+
+            <Link
+              to="/signin"
+              style={{
+                padding: "0.85rem 1.9rem",
+                borderRadius: "999px",
+                border: "1px solid #f44336",
+                color: "#f44336",
+                textDecoration: "none",
+                fontSize: "0.95rem",
+                fontWeight: 500,
+                backgroundColor: "#ffffff",
+              }}
+            >
+              I already have an account
+            </Link>
+          </div>
+
+          <p
+            style={{
+              marginTop: "0.9rem",
+              fontSize: "0.85rem",
+              color: "#555",
+            }}
+          >
+            No long-term commitment. Start with a pilot cohort and see the
+            difference in clarity, confidence, and completion.
+          </p>
+        </section>
       </div>
     </main>
   );
