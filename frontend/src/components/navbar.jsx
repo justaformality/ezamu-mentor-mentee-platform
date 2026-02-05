@@ -1,6 +1,23 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 function Navbar() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check if user is logged in by checking localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    window.location.href = "/";
+  };
+
   return (
     <nav
       style={{
@@ -31,9 +48,30 @@ function Navbar() {
           Ezamu
         </Link>
 
-        <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.95rem" }}>
-          <Link to="/signin">Sign In</Link>
-          <Link to="/signup">Sign Up</Link>
+        <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.95rem", alignItems: "center" }}>
+          {user ? (
+            <>
+              <Link to="/book-appointments">Book Appointments</Link>
+              <Link to="/profile">Profile</Link>
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#f44336",
+                  fontSize: "0.95rem",
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/signin">Sign In</Link>
+              <Link to="/signup">Sign Up</Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

@@ -21,7 +21,7 @@ function SignInPage() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    navigate("/dashboard");
+    navigate("/student-dashboard");
   }
 
   return (
