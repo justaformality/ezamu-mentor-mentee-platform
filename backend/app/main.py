@@ -1,59 +1,69 @@
 from __future__ import annotations
 
+import os
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-USERS_FILE = DATA_DIR / "users.txt"
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set")
 
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-USERS_FILE.touch(exist_ok=True)
+
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key = True, index = True)
+    email = Column(String, unique = True, nullable = False, index = True)
+    password_hash = Column(String, nullable = False)
+    role = Column(String, default = "student")
+    fullName = Column(String, default = "")
+    createdAt = Column(DateTime, default=datetime.now(timezone.utc))
+
+    appointments = relationship("Appointment", back_populates="user")
+    action_items = relationship("ActionItem", back_populates="user")
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id = Column(Integer, primary_key = True, index = True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String, nullable = False)
+    scheduledAt = Column(DateTime, nullable = False)
+
+    user = relationship("User", back_populates="appointments")
+
+class ActionItem(Base):
+    __tablename__ = "action_items"
+
+    id = Column(Integer, primary_key = True, index = True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    description = Column(String, nullable = False)
+    completed = Column(Boolean, default = False)
+
+    user = relationship("User", back_populates="action_items")
+
+Base.metadata.create_all(bind=engine)
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
-
-
-def _read_users() -> list[dict]:
-    users: list[dict] = []
-    with USERS_FILE.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                users.append(json.loads(line))
-            except json.JSONDecodeError:
-                # POC behavior: ignore corrupted lines
-                continue
-    return users
-
-
-def _write_user(user: dict) -> None:
-    with USERS_FILE.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(user, ensure_ascii=False) + "\n")
-
-
-def _next_id(users: list[dict]) -> int:
-    max_id = 0
-    for u in users:
-        try:
-            max_id = max(max_id, int(u.get("id", 0)))
-        except Exception:
-            pass
-    return max_id + 1
-
 
 def _map_role(payload: Dict[str, Any]) -> str:
     # Accept multiple naming conventions from different frontends
@@ -117,7 +127,7 @@ class UserOut(BaseModel):
     createdAt: str
 
 
-app = FastAPI(title="EZAMU POC Backend (TXT)")
+app = FastAPI(title="EZAMU POC Backend (DB)")
 
 # Adjust these if your frontend runs on a different origin
 allowed_origins = [
@@ -135,6 +145,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/health")
 def health():
@@ -142,62 +158,79 @@ def health():
 
 
 @app.post("/auth/register", response_model=UserOut, status_code=201)
-def register(user_in: RegisterIn):
-    users = _read_users()
+def register(user_in: RegisterIn, db: Session = Depends(get_db)):
     email = _normalize_email(str(user_in.email))
-
-    if any(_normalize_email(u.get("email", "")) == email for u in users):
-        raise HTTPException(status_code=400, detail="Email already registered")
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code = 400, detail="Email is already registered")
 
     role = _map_role(user_in.model_dump())
     full_name = _map_full_name(user_in.model_dump())
 
-    new_user = {
-        "id": _next_id(users),
-        "email": email,
-        "password_hash": pwd_context.hash(user_in.password),
-        "role": role,
-        "fullName": full_name,
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-    }
-    _write_user(new_user)
+    new_user = User(
+        email = email,
+        password_hash = pwd_context.hash(user_in.password),
+        role = role,
+        fullName = full_name,
+        createdAt = datetime.now(timezone.utc)
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
-    return {
-        "id": new_user["id"],
-        "email": new_user["email"],
-        "role": new_user["role"],
-        "fullName": new_user["fullName"] or None,
-        "createdAt": new_user["createdAt"],
-    }
+    return UserOut(
+        id = new_user.id,
+        email = new_user.email,
+        role = new_user.role,
+        fullName = new_user.fullName,
+        createdAt = new_user.createdAt.isoformat()
+    )
 
 
 @app.post("/auth/login", response_model=UserOut)
-def login(user_in: LoginIn):
-    users = _read_users()
-    email = _normalize_email(str(user_in.email))
+def login(user_in: LoginIn, db: Session = Depends(get_db)):
+    email = _normalize_email(user_in.email)
+    user = db.query(User).filter(User.email == email).first()
 
-    user = next((u for u in users if _normalize_email(u.get("email", "")) == email), None)
-    if not user:
+    if not user or not pwd_context.verify(user_in.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    stored_hash = user.get("password_hash", "")
-    if not stored_hash or not pwd_context.verify(user_in.password, stored_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    return {
-        "id": int(user.get("id", 0)),
-        "email": user.get("email", email),
-        "role": user.get("role", "student"),
-        "fullName": user.get("fullName") or None,
-        "createdAt": user.get("createdAt", ""),
-    }
+    return UserOut(
+        id = user.id,
+        email = user.email,
+        role = user.role,
+        fullName = user.fullName or None,
+        createdAt = user.createdAt.isoformat()
+    )
 
 
 # Backwards-compat aliases (so older frontend code that used /api/signup keeps working)
 @app.post("/api/signup", response_model=UserOut, status_code=201)
-def signup_alias(user_in: RegisterIn):
-    return register(user_in)
+def signup_alias(user_in: RegisterIn, db: Session = Depends(get_db)):
+    return register(user_in, db)
 
 @app.post("/api/login", response_model=UserOut)
-def login_alias(user_in: LoginIn):
-    return login(user_in)
+def login_alias(user_in: LoginIn, db: Session = Depends(get_db)):
+    return login(user_in, db)
+
+@app.get("/users/{user_id}/appointments")
+def get_appointments(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code = 404, detail = "User not found")
+    
+    return [
+        {"id": a.id, "title": a.title, "scheduledAt": a.scheduledAt.isoformat()}
+        for a in user.appointments
+    ]
+
+@app.get("/users/{user_id}/action_items")
+def get_action_items(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code = 404, detail = "User not found")
+    
+    return [
+        {"id": ai.id, "description": ai.description, "completed": ai.completed}
+        for ai in user.action_items
+    ]

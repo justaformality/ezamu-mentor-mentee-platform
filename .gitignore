@@ -1,5 +1,11 @@
 # Python
 backend/.venv/
-backend/__pycache__/
-backend/*.pyc
+backend/venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
 backend/.pytest_cache/
+.env
+
+
