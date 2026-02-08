@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 function Navbar() {
@@ -11,6 +11,9 @@ function Navbar() {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  const location = useLocation();
+  const pathname = location.pathname;
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -49,29 +52,49 @@ function Navbar() {
         </Link>
 
         <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.95rem", alignItems: "center" }}>
-          {user ? (
-            <>
-              <Link to="/book-appointments">Book Appointments</Link>
-              <Link to="/profile">Profile</Link>
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#f44336",
-                  fontSize: "0.95rem",
-                }}
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/signin">Sign In</Link>
-              <Link to="/signup">Sign Up</Link>
-            </>
-          )}
+            {/* If we're on the student dashboard, show temporary student links even if user isn't set yet */}
+            {pathname === "/student-dashboard" ? (
+              <>
+                <Link to="/book-appointments">Book an Appointment</Link>
+                <Link to="/profile">My Profile</Link>
+                {user && (
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#f44336",
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    Logout
+                  </button>
+                )}
+              </>
+            ) : user ? (
+              <>
+                <Link to="/book-appointments">Book Appointments</Link>
+                <Link to="/profile">Profile</Link>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#f44336",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/signin">Sign In</Link>
+                <Link to="/signup">Sign Up</Link>
+              </>
+            )}
         </div>
       </div>
     </nav>
