@@ -51,6 +51,23 @@ function StudentDashboard() {
     description: "The Campaigner - Enthusiastic and creative people-person",
   };
 
+  const assessmentResults = [
+     {
+     id: 1,
+     name: "Inner Hero",
+     scoreText: "Planner",
+     summary: "Organized, dependable, punctual, and responsibility-driven.",
+     completedOn: "Jan 28, 2026",
+   },
+   {
+     id: 2,
+     name: "Career Interests",
+     scoreText: "Top match: Project Coordinator / Operations",
+     completedOn: "Feb 02, 2026",
+   },
+ ];
+
+
   const toggleComplete = (itemId) => {
     setCompletedItems((prev) => ({
       ...prev,
@@ -169,9 +186,16 @@ function StudentDashboard() {
                 border: "1px solid #e9ecef",
               }}
             >
-              <h2 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", color: "#333" }}>
+              <h2 style={{ fontSize: "1.2rem", marginBottom: "0.5rem", color: "#333" }}>
                 Upcoming Appointments
               </h2>
+
+               <p style={{ marginTop: "0", marginBottom: "1rem", color: "#666", fontSize: "0.9rem" }}>
+               {upcomingAppointments.length > 0
+                 ? `You have ${upcomingAppointments.length} upcoming appointment(s). Next one is ${upcomingAppointments[0].date} at ${upcomingAppointments[0].time}.`
+                 : "No upcoming appointments scheduled."}
+             </p>
+
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {upcomingAppointments.map((appointment) => {
                   const { day, month } = formatDateBadge(appointment.date); //added this line!
@@ -255,6 +279,7 @@ function StudentDashboard() {
                 borderRadius: "8px",
                 padding: "1.5rem",
                 border: "1px solid #e9ecef",
+                marginBottom: "2rem",
               }}
             >
               <h2 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", color: "#333" }}>
@@ -290,7 +315,62 @@ function StudentDashboard() {
                 </p>
               </div>
             </div>
+
+            {/* Assessment Results */}
+           <div
+             style={{
+             backgroundColor: "#f8f9fa",
+             borderRadius: "8px",
+             padding: "1.5rem",
+             marginBottom: "2rem",
+             border: "1px solid #e9ecef",
+             }}
+           >
+             <h2 style={{ fontSize: "1.2rem", marginBottom: "0.5rem", color: "#333" }}>
+             Assessment Results
+             </h2>
+
+
+             <p style={{ marginTop: "0", marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
+             {assessmentResults.length > 0
+              ? `You have ${assessmentResults.length} recent assessment result(s).`
+              : "No assessment results yet."}
+             </p>
+
+
+             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {assessmentResults.map((a) => (
+            <div
+              key={a.id}
+               style={{
+               backgroundColor: "#fff",
+               padding: "1rem",
+               borderRadius: "6px",
+               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+               borderLeft: "4px solid #007bff",
+              }}
+             >
+           <p style={{ margin: "0 0 0.25rem 0", fontWeight: "600", color: "#333" }}>
+            {a.name}
+           </p>
+           <p style={{ margin: "0.25rem 0", color: "#666", fontSize: "0.9rem" }}>
+           {a.scoreText}
+           </p>
+           {a.summary && (
+           <p style={{ margin: "0.25rem 0", color: "#666", fontSize: "0.9rem" }}>
+            {a.summary}
+             </p>
+           )}
+
+
+           <p style={{ margin: "0.25rem 0 0 0", color: "#999", fontSize: "0.85rem" }}>
+            Completed: {a.completedOn}
+           </p>
+           </div>
+          ))}
           </div>
+         </div>
+         </div>
 
           {/* RIGHT COLUMN */}
           <div
