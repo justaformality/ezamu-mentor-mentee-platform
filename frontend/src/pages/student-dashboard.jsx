@@ -1,4 +1,15 @@
 import { useState } from "react";
+//adding stuff under this!
+
+const formatDateBadge = (dateStr) => {
+  const date = new Date(dateStr);
+  return {
+    day: date.getDate(),
+    month: date.toLocaleString("default", {month: "short"}),
+  };
+};
+
+//added stuff above this!
 
 function StudentDashboard() {
   const [completedItems, setCompletedItems] = useState({});
@@ -95,6 +106,34 @@ function StudentDashboard() {
         return "#999";
     }
   };
+  //adding below this for progress bar
+  const completedCount = Object.values(completedItems).filter(Boolean).length;
+  const progressPercent = Math.round((completedCount / actionableItems.length) * 100);
+  
+  const priorityOrder = {
+    high: 1, 
+    medium: 2, 
+    low: 3,
+  };
+  
+  const sortedItems = [...actionableItems].sort((a, b) => {
+    const aComp = completedItems[a.id];
+    const bComp = completedItems[b.id];
+
+    if(aComp !== bComp){
+      return aComp ? 1 : -1;
+    }
+    if(!aComp && !bComp) {
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }
+
+    return 0;
+  });
+
+  const incompleteItems = sortedItems.filter((item) => !completedItems[item.id]);
+  const completedListItems = sortedItems.filter((item) => completedItems[item.id]);
+
+  //adding above this
 
   //the dashboard 
   return (
@@ -135,6 +174,7 @@ function StudentDashboard() {
               </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {upcomingAppointments.map((appointment) => {
+                  const { day, month } = formatDateBadge(appointment.date); //added this line!
                   const isCoachImage = coachImages[appointment.coachName];
                   return (
                   <div
@@ -146,10 +186,26 @@ function StudentDashboard() {
                       alignItems: "flex-start",
                       padding: "1rem",
                       borderRadius: "6px",
-                      borderLeft: "4px solid #007bff",
+                      borderLeft: "4px solid #4170a2",
                       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     }}
-                  >
+                  > 
+                  {/*adding this badge, adding below this */}
+                    <div
+                    style={{
+                      minWidth: "50px",
+                      textAlign: "center",
+                      backgroundColor: "#70baf3",
+                      color: "#fff",
+                      borderRadius: "8px",
+                      padding: "0.5rem 0",
+                      fontWeight: "600",
+                    }}
+                    >
+                      <div style={{ fontSize: "1.2rem" }}>{day}</div>
+                      <div style={{ fontSize: "0.75rem", textTransform: "uppercase" }}>{month}</div>
+                    </div>
+                    {/*adding above this */}
                     {isCoachImage && (
                       <img
                         src={isCoachImage}
@@ -249,8 +305,33 @@ function StudentDashboard() {
             <h2 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", color: "#333" }}>
               ✅ Actionable Items
             </h2>
+            {/*adding below this for progress bar! */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <div
+                style={{
+                  height: "8px",
+                  backgroundColor: "#e9ecef",
+                  borderRadius: "4px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${progressPercent}%`,
+                    backgroundColor: "#4ecdc4",
+                    transition: "width 0.3s ease",
+                  }}
+                />
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.25rem" }}>
+                {progressPercent}% completed
+              </p>
+            </div>
+            {/*adding above this for progress bar! */}
+
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {actionableItems.map((item) => {
+                {incompleteItems.map((item) => { //changing actionableitems to incompleteItems
                   const isCompleted = completedItems[item.id];
                   return (
                 <div
@@ -262,7 +343,7 @@ function StudentDashboard() {
                     borderLeft: `4px solid ${getPriorityColor(item.priority)}`,
                     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     opacity: isCompleted ? 0.6 : 1,
-                    textDecoration: isCompleted ? "line-through" : "none",
+                    //textDecoration: isCompleted ? "line-through" : "none",
                   }}
                 >
                   <div
@@ -326,6 +407,63 @@ function StudentDashboard() {
                     <span>📅 Due: {item.dueDate}</span>
                   </div>
                 </div>
+                );
+              })}
+              {/*adding completed divider*/}
+              {completedListItems.length > 0 && (
+                <div
+                  style={{
+                    margin: "1rem 0 0.5rem",
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "#999",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05rem",
+                  }}
+                >
+                  Completed
+                  </div>
+              )}
+              {completedListItems.map((item) => {
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      backgroundColor: "#fff",
+                      padding: "1.25rem",
+                      borderRadius: "6px",
+                      borderLeft: `4px solid ${getPriorityColor(item.priority)}`,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                      opacity: 0.6,
+                      textDecoration: "line-through",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "start",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => toggleComplete(item.id)}
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          cursor: "pointer",
+                          marginRight: "0.75rem",
+                          marginTop: "0.125rem",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <p style={{margin: "0", fontWeight: "600", flex:1}}>
+                        {item.title}
+                      </p>
+                    </div>
+                  </div>
                 );
               })}
             </div>
