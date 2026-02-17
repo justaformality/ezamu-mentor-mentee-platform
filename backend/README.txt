@@ -32,8 +32,9 @@ How to run (local)
 6) Create a PostgreSQL database (example: ezamu_db)
 7) Create a database user and grant access
 8) Set DATABASE_URL environment variable:
-   Example: postgresql+psycog2://<username>:<password>@localhost:5432/ezamu_db
-9) uvicorn app.main:app --relaod --port 5000
+   - $env:DATABASE_URL="postgresql+psycopg2://<username>:<password>@localhost:5432/ezamu_db"
+   - Be sure to replace username with the username of a user you created or using postgres superuser, and replace password with the respective user you would like to use
+9) uvicorn app.main:app --reload --port 5000
 
 CORS
 - By default, allows http://localhost:5173 and http://127.0.0.1:5173 (Vite default).
