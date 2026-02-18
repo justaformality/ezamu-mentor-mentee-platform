@@ -7,6 +7,7 @@ function SignInPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
+    role: "",
   });
 
   const [message, setMessage] = useState("");
@@ -21,7 +22,30 @@ function SignInPage() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    navigate("/student-dashboard");
+    
+    //for now to test pages just uncomment what u wanna go to after signin
+    //navigate("/student-dashboard");
+    navigate("/coach-dashboard");
+
+    //to be developed based on db
+    // if (!form.role) {
+    //   setMessage("Please select a role");
+    //   return;
+    // }
+
+    // // Store user data with role in localStorage
+    // const userData = {
+    //   email: form.email,
+    //   role: form.role,
+    // };
+    // localStorage.setItem("user", JSON.stringify(userData));
+
+    // // Redirect based on role
+    // if (form.role === "student") {
+    //   navigate("/student-dashboard");
+    // } else if (form.role === "coach") {
+    //   navigate("/coach-dashboard");
+    // }
   }
 
   return (

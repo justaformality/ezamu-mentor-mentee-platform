@@ -1,7 +1,9 @@
 // src/pages/SignUpPage.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function SignUpPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -10,6 +12,7 @@ function SignUpPage() {
   });
 
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -19,12 +22,55 @@ function SignUpPage() {
     }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    console.log("Sign up form submitted:", form);
-    setMessage(
-      "This would send your data to the backend. (Frontend only for now)"
-    );
+    setIsLoading(true);
+    setMessage("");
+
+    //attempting to insert new user into db through backend endpoint... still in progress
+    try {
+      const response = await fetch("http://localhost:5000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          role: form.role,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store user data in localStorage
+        const userData = {
+          email: form.email,
+          role: form.role,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        setMessage("Sign up successful! Redirecting...");
+        
+        // Redirect based on role
+        setTimeout(() => {
+          if (form.role === "student") {
+            navigate("/student-dashboard");
+          } else if (form.role === "coach" || form.role === "mentor") {
+            navigate("/coach-dashboard");
+          }
+        }, 500);
+      } else {
+        setMessage(data.detail || "Sign up failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Sign up error:", error);
+      setMessage("Error connecting to the server. Is the backend running on port 5000?");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -96,21 +142,44 @@ function SignUpPage() {
 
         <button
           type="submit"
+          disabled={isLoading}
           style={{
             marginTop: "0.5rem",
             padding: "0.75rem",
-            backgroundColor: "#f44336",
+            backgroundColor: isLoading ? "#ccc" : "#f44336",
             color: "white",
             border: "none",
             borderRadius: "0.4rem",
-            cursor: "pointer",
+            cursor: isLoading ? "not-allowed" : "pointer",
           }}
         >
-          Sign Up
+          {isLoading ? "Signing Up..." : "Sign Up"}
         </button>
       </form>
 
-      {message && <p style={{ marginTop: "1rem", color: "gray" }}>{message}</p>}
+      {message && (
+        <p
+          style={{
+            marginTop: "1rem",
+            padding: "0.75rem",
+            borderRadius: "0.4rem",
+            backgroundColor:
+              message.includes("successful") || message.includes("Redirecting")
+                ? "#d4edda"
+                : "#f8d7da",
+            color:
+              message.includes("successful") || message.includes("Redirecting")
+                ? "#155724"
+                : "#721c24",
+            border:
+              message.includes("successful") || message.includes("Redirecting")
+                ? "1px solid #c3e6cb"
+                : "1px solid #f5c6cb",
+          }}
+        >
+          {message}
+        </p>
+      )}
     </main>
   );
 }
