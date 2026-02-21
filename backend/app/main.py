@@ -12,7 +12,7 @@ from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Boolean
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -33,6 +33,9 @@ class User(Base):
     fullName = Column(String, default = "")
     createdAt = Column(DateTime, default=datetime.now(timezone.utc))
 
+    coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
+
+    coach = relationship("User", remote_side=[id], backref="students")
     appointments = relationship("Appointment", back_populates="user")
     action_items = relationship("ActionItem", back_populates="user")
 
@@ -234,3 +237,54 @@ def get_action_items(user_id: int, db: Session = Depends(get_db)):
         {"id": ai.id, "description": ai.description, "completed": ai.completed}
         for ai in user.action_items
     ]
+
+@app.get("/coaches/{coach_id}/students")
+def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code = 404, detail = "Coach not found")
+    
+    return [
+        {
+            "id": student.id,
+            "email": student.email,
+            "fullName": student.fullName,
+            "createdAt": student.createdAt.isoformat()
+        }
+        for student in coach.students
+    ]
+
+@app.post("/students/{student_id}/assign_coach/{coach_id}")
+def assign_coach(student_id: int, coach_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    coach = db.query(User).filter(User.id == coach_id, User.role =="coach").first()
+    if not student:
+        raise HTTPException(status_code = 404, detail = "Student not found")
+    if not coach:
+        raise HTTPException(status_code = 404, detail = "Coach not found")
+    
+    student.coachID = coach_id
+    db.commit()
+    db.refresh(student)
+
+    return {"message": "Coach assigned successfully"}
+
+@app.get("/coaches/{coach_id}/students/{student_id}/action_items")
+def get_student_action_items(coach_id: int, student_id: int, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role =="coach").first()
+    student = db.query(User).filter(User.id == student_id, User.coachID == coach_id).first()
+    if not coach:
+        raise HTTPException(status_code = 404, detail = "Coach not found")
+    if not student:
+        raise HTTPException(status_code = 403, detail = "Student is not assigned to this coach")
+    
+    return [
+        {
+            "id": ai.id,
+            "description": ai.description,
+            "completed": ai.completed
+        }
+        for ai in student.action_items
+    ]
+
+    
