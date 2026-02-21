@@ -56,6 +56,7 @@ function Navbar() {
             {pathname === "/student-dashboard" ? (
               <>
                 <Link to="/book-appointments">Book an Appointment</Link>
+                <Link to="/assessment">Assessments Form</Link>
                 <Link to="/profile">My Profile</Link>
                 {user && (
                   <button
@@ -75,6 +76,7 @@ function Navbar() {
             ) : user ? (
               <>
                 <Link to="/book-appointments">Book Appointments</Link>
+                <Link to="/assessment">Assessments Form</Link>
                 <Link to="/profile">Profile</Link>
                 <button
                   onClick={handleLogout}
