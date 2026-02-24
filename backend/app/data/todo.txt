@@ -1,0 +1,5 @@
+TODO list:
+
+- Test database functionality (backend alone)
+- Test front end to back end connection (simply check if linked correctly)
+- Test if front end information is stored properly in database
