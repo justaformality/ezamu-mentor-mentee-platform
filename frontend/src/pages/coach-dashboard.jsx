@@ -229,7 +229,7 @@ function CoachDashboard() {
                 }}
               >
                 {upcomingAppointments.length > 0
-                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). Next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.` //changed upcoming to sorted bc time
+                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). The next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.` //changed upcoming to sorted bc time
                   : "No upcoming appointments scheduled."}
               </p>
 
