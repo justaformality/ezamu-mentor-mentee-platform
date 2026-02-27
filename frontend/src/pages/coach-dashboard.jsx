@@ -28,9 +28,44 @@ function CoachDashboard() {
       time: "2:00 PM",
       duration: "30 min",
     },
+    { //added more students and modified the existing structure so no matter which order the students are added in they are sorted by date. 
+      id: 2, 
+      studentName: "Mari Lopez",
+      date: "April 2, 2026",
+      time: "3:00 PM",
+      duration: "45 min"
+    },
+    {
+      id: 3, 
+      studentName: "Alex Scott",
+      date: "May 13, 2026",
+      time: "3:00 PM",
+      duration: "45 min"
+    }, 
+    {
+      id: 4, 
+      studentName: "Sara Michaels",
+      date: "June 21, 2026",
+      time: "4:15 PM",
+      duration: "45 min"
+    },
+    {
+      id: 5, 
+      studentName: "Ramona Jones",
+      date: "September 20, 2026",
+      time: "3:00 PM",
+      duration: "45 min"
+    },
+    {
+      id: 6, 
+      studentName: "Ramona Jones",
+      date: "Jan 20, 2026",
+      time: "3:00 PM",
+      duration: "45 min"
+    }
   ];
 
-  // Dummy data for students being coached (ARSHIA - create a couple more of these?)
+  // Dummy data for students being coached (ARSHIA - create a couple more of these?) (i did this - sai)
   const studentsList = [
     {
       id: 1,
@@ -39,6 +74,41 @@ function CoachDashboard() {
       joinDate: "Jan 15, 2026",
       progress: "On Track",
     },
+    { //added more students
+      id: 2, 
+      name: "Mari Lopez",
+      focusArea: "Counseling",
+      joinDate: "Jan 12, 2026",
+      progress: "Just Started",
+    },
+    {
+      id: 3, 
+      name: "Alex Scott",
+      focusArea: "Counseling",
+      joinDate: "February 2, 2025",
+      progress: "Exceeding Goals",
+    }, 
+    {
+      id: 4, 
+      name: "Sara Michaels",
+      focusArea: "Career Development",
+      joinDate: "March 2, 2025",
+      progress: "On Track",
+    },
+    {
+      id: 5, 
+      name: "Ramona Jones",
+      focusArea: "Counseling",
+      joinDate: "March 12, 2026",
+      progress: "Behind Schedule",
+    },
+    {
+      id: 6, 
+      name: "Prisha Rohan",
+      focusArea: "Counseling",
+      joinDate: "March 12, 2024",
+      progress: "On Track",
+    }
   ];
 
   const getPriorityColor = (priority) => {
@@ -62,6 +132,8 @@ function CoachDashboard() {
         return "#007bff";
       case "Just Started":
         return "#ffc107";
+      case "Behind Schedule": //new case for students that are behind
+        return "#ff7707"; 
       default:
         return "#999";
     }
@@ -101,6 +173,16 @@ function CoachDashboard() {
   const handleDeleteItem = (id) => {
     setAssignedItems((prev) => prev.filter((item) => item.id !== id));
   };
+
+  const sortedAppointments = [...upcomingAppointments].sort((a, b) => { //created this so appointments are sorted by data
+    const dateA = new Date(`${a.date} ${a.time}`);
+    const dateB = new Date(`${b.date} ${b.time}`);
+    return dateA - dateB;
+  });
+
+  const sortedStudents = [...studentsList].sort((a, b) => { //created this so students are sorted by time, can remove if needed
+    return new Date(a.joinDate) - new Date(b.joinDate);
+  });
 
   return (
     <main
@@ -147,12 +229,12 @@ function CoachDashboard() {
                 }}
               >
                 {upcomingAppointments.length > 0
-                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). Next one is ${upcomingAppointments[0].date} at ${upcomingAppointments[0].time}.`
+                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). Next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.` //changed upcoming to sorted bc time
                   : "No upcoming appointments scheduled."}
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {upcomingAppointments.map((appointment) => {
+                {sortedAppointments.map((appointment) => {
                   const { day, month } = formatDateBadge(appointment.date);
                   return (
                     <div
@@ -251,7 +333,7 @@ function CoachDashboard() {
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {studentsList.map((student) => (
+                {sortedStudents.map((student) => ( //changed studentslist to sortedstudents for time order
                   <div
                     key={student.id}
                     style={{
@@ -599,7 +681,7 @@ function CoachDashboard() {
                         style={{
                           margin: "0.5rem 0",
                           fontSize: "0.9rem",
-                          color: "#666",
+                          color: "#666666",
                         }}
                       >
                         {item.description}
