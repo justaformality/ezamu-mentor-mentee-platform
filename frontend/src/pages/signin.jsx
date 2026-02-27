@@ -24,8 +24,8 @@ function SignInPage() {
     e.preventDefault();
     
     //for now to test pages just uncomment what u wanna go to after signin
-    //navigate("/student-dashboard");
-    navigate("/coach-dashboard");
+    navigate("/student-dashboard");
+    //navigate("/coach-dashboard");
 
     //to be developed based on db
     // if (!form.role) {

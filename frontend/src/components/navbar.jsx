@@ -21,6 +21,51 @@ function Navbar() {
     window.location.href = "/";
   };
 
+  // special layout when viewing the appointments page
+  if (pathname === "/appointments") {
+    return (
+      <nav
+        style={{
+          width: "100%",
+          borderBottom: "1px solid #eee",
+          padding: "0.75rem 0",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "0 2rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
+            <Link
+              to="/"
+              style={{
+                textDecoration: "none",
+                fontWeight: "bold",
+                fontSize: "1.3rem",
+                color: "#f44336",
+              }}
+            >
+              Ezamu
+            </Link>
+            <Link to="/student-dashboard" style={{ textDecoration: "none", color: "#f44336" }}>
+              Dashboard
+            </Link>
+          </div>
+
+          <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.95rem", alignItems: "center" }}>
+            <Link to="/profile">Profile</Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav
       style={{
@@ -55,7 +100,7 @@ function Navbar() {
             {/* If we're on the student dashboard, show temporary student links even if user isn't set yet */}
             {pathname === "/student-dashboard" ? (
               <>
-                <Link to="/book-appointments">Book an Appointment</Link>
+                <Link to="/appointments">Appointments</Link>
                 <Link to="/assessment">Assessments Form</Link>
                 <Link to="/profile">My Profile</Link>
                 {user && (
@@ -75,7 +120,7 @@ function Navbar() {
               </>
             ) : user ? (
               <>
-                <Link to="/book-appointments">Book Appointments</Link>
+                <Link to="/appointments">Appointments</Link>
                 <Link to="/assessment">Assessments Form</Link>
                 <Link to="/profile">Profile</Link>
                 <button
