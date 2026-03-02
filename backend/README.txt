@@ -30,7 +30,7 @@ How to run (local)
 4) pip install -r requirements.txt
 5) Install and run PostgreSQL locally (** External Installation, NOT given in requirements.txt **)
    - psql -U postgres
-         - Windows (easy/lazy): "C:\Program Files\PostgreSQL\<psql_ver_num>\bin\psql.exe" -U postgres
+         - Windows on CMD (easy/lazy): "C:\Program Files\PostgreSQL\<psql_ver_num>\bin\psql.exe" -U postgres
                - to use "psql", run on CMD: setx PATH "%PATH%;C:\Program Files\PostgreSQL\<psql_ver_num>\bin"
          - mac (easy/lazy): /Library/PostgreSQL/<psql_ver_num>/bin/psql -U postgres
                - to use "psql", run on terminal: echo 'export PATH="/Applications/PostgreSQL <num>/bin:$PATH"' >> ~/.zshrc
@@ -52,7 +52,7 @@ How to run (local)
    - ALTER SCHEMA public OWNER TO ezamu_user;
    - \q 
 9) Set DATABASE_URL environment variable:
-   - On Windows run: $env:DATABASE_URL="postgresql+psycopg2://<username>:<password>@localhost:5432/ezamu_db"
+   - On Windows powershell run: $env:DATABASE_URL="postgresql+psycopg2://<username>:<password>@localhost:5432/ezamu_db"
          - if on CMD: set DATABASE_URL=postgresql+psycopg2://postgres:<password>@localhost:5432/ezamu_db
    - On Mac run: export DATABASE_URL="postgresql+psycopg2://<username>:<password>@localhost:5432/ezamu_db"
    - Be sure to replace username with the username of a user you created or using postgres superuser, and replace password with the password of the respective user you are using
