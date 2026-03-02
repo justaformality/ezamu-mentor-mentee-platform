@@ -22,7 +22,7 @@ To Run:
             uvicorn app.main:app --reload --port 5000
 
             # Terminal 2 (run tests):
-            Mac Terminal:
+            Mac Terminal (in backend folder WITH venv activated):
             export API_BASE_URL="http://127.0.0.1:5000"
             python3 app/test_cases_backend_hosted.py
 
@@ -209,4 +209,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
