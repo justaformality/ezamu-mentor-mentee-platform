@@ -1,9 +1,6 @@
 """
 test_cases_backend_postgres.py
 
-***
-Intended for WINDOWS and CMD ONLY
-***
 
 Update log:
 Last updated        | Version of main.py tested      | Test cases passed      | OS
