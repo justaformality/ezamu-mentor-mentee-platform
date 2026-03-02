@@ -30,8 +30,11 @@ How to run (local)
 4) pip install -r requirements.txt
 5) Install and run PostgreSQL locally (** External Installation, NOT given in requirements.txt **)
    - psql -U postgres
-         - Windows (easy/lazy): "C:\Program Files\PostgreSQL\<psql_ver_num>\bin\psql.exe" -U postgres 
+         - Windows (easy/lazy): "C:\Program Files\PostgreSQL\<psql_ver_num>\bin\psql.exe" -U postgres
+               - to use "psql", run on CMD: setx PATH "%PATH%;C:\Program Files\PostgreSQL\<psql_ver_num>\bin"
          - mac (easy/lazy): /Library/PostgreSQL/<psql_ver_num>/bin/psql -U postgres
+               - to use "psql", run on terminal: echo 'export PATH="/Applications/PostgreSQL <num>/bin:$PATH"' >> ~/.zshrc
+                                                 source ~/.zshrc
    - Enter the password you created during PostgreSQL installation
 6) Create a database 
    - CREATE DATABASE ezamu_db; 
