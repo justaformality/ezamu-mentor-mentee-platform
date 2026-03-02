@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, time
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -58,6 +58,17 @@ class ActionItem(Base):
     completed = Column(Boolean, default = False)
 
     user = relationship("User", back_populates="action_items")
+
+class CoachAvailability(Base):
+    __tablename__ = "coach_availability"
+
+    id = Column(Integer, primary_key = True, index = True)
+    coach_id = Column(Integer, ForeignKey("users.id"), nullable = False)
+    date = Column(Date, nullable = False)
+    start_time = Column(Time, nullable = False)
+    end_time = Column(Time, nullable = False)
+
+    coach = relationship("User", backref="availability_slots")
 
 Base.metadata.create_all(bind=engine)
 
@@ -129,6 +140,16 @@ class UserOut(BaseModel):
     fullName: Optional[str] = None
     createdAt: str
 
+class AvailabilityIn(BaseModel):
+    date: str # YYYY-MM-DD
+    start_time: str # HH:MM
+    end_time: str # HH:MM
+
+class AvailabilityOut(BaseModel):
+    id: int
+    date: str
+    start_time: str
+    end_time: str
 
 app = FastAPI(title="EZAMU POC Backend (DB)")
 
@@ -287,4 +308,80 @@ def get_student_action_items(coach_id: int, student_id: int, db: Session = Depen
         for ai in student.action_items
     ]
 
+@app.post("/coaches/{coach_id}/availability", response_model = AvailabilityOut)
+def add_availability(coach_id: int, slot: AvailabilityIn, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code = 404, detail = "Coach not found")
+    try:  
+        parsed_date = datetime.strptime(slot.date, "%Y-%m-%d").date()
+        parsed_start = datetime.strptime(slot.start_time, "%H:%M").time()
+        parsed_end = datetime.strptime(slot.end_time, "%H:%M").time()
+    except ValueError:
+        raise HTTPException(status_code=400, detail = "Invalid date or time format") 
     
+    if parsed_start >= parsed_end:
+        raise HTTPException(status_code = 400, detail = "Start time must be before end time")
+    
+    appointment_slot = CoachAvailability(
+        coach_id = coach_id,
+        date = parsed_date,
+        start_time = parsed_start,
+        end_time = parsed_end,
+    )
+
+    db.add(appointment_slot)
+    db.commit()
+    db.refresh(appointment_slot)
+
+    return AvailabilityOut(
+        id = appointment_slot.id,
+        date = appointment_slot.date.isoformat(),
+        start_time = appointment_slot.start_time.strftime("%H:%M"),
+        end_time = appointment_slot.end_time.strftime("%H:%M")
+    )
+
+@app.get("/coaches/{coach_id}/availability", response_model=List[AvailabilityOut])
+def get_availability(coach_id: int, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    return [
+        AvailabilityOut(
+            id=slot.id,
+            date=slot.date.isoformat(),
+            start_time=slot.start_time.strftime("%H:%M"),
+            end_time=slot.end_time.strftime("%H:%M")
+        )
+        for slot in coach.availability_slots
+    ]
+
+@app.get("/coaches/filter")
+def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
+    try:
+        parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
+        parsed_time = datetime.strptime(time, "%H:%M").time()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date or time format")
+
+    available_coaches = (
+        db.query(User)
+        .join(CoachAvailability)
+        .filter(
+            User.role == "coach",
+            CoachAvailability.date == parsed_date,
+            CoachAvailability.start_time <= parsed_time,
+            CoachAvailability.end_time >= parsed_time
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id": coach.id,
+            "email": coach.email,
+            "fullName": coach.fullName
+        }
+        for coach in available_coaches
+    ]
