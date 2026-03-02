@@ -31,7 +31,18 @@ How to run (local)
 5) Install and run PostgreSQL locally (** External Installation, NOT given in requirements.txt **)
    - psql -U postgres
          - Windows on CMD (easy/lazy): "C:\Program Files\PostgreSQL\<psql_ver_num>\bin\psql.exe" -U postgres
-               - to use "psql", run on CMD: setx PATH "%PATH%;C:\Program Files\PostgreSQL\<psql_ver_num>\bin"
+               - to use "psql", add to environment variables:
+                     Press Win and type: Environment Variables
+                     Click Edit the system environment variables
+                     Click Environment Variables…
+                     Under User variables for (your username), select Path → Edit
+                     Click New
+                     Add this line (adjust version if needed):
+                     C:\Program Files\PostgreSQL\18\bin
+                     Click OK on all windows
+                     Close all CMD/PowerShell windows
+                     Open a new CMD and test:
+                     psql --version
          - mac (easy/lazy): /Library/PostgreSQL/<psql_ver_num>/bin/psql -U postgres
                - to use "psql", run on terminal: echo 'export PATH="/Applications/PostgreSQL <num>/bin:$PATH"' >> ~/.zshrc
                                                  source ~/.zshrc
