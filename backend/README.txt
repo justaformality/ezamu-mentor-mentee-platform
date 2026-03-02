@@ -28,7 +28,7 @@ How to run (local)
    - Windows: .venv\Scripts\activate
    - macOS/Linux: source .venv/bin/activate
 4) pip install -r requirements.txt
-5) Install and run PostgreSQL locally
+5) Install and run PostgreSQL locally (** External Installation, NOT given in requirements.txt **)
    - psql -U postgres 
    - Enter the password you created during PostgreSQL installation
 6) Create a database 
