@@ -1,7 +1,6 @@
 """
 test_cases_backend_postgres.py
 
-
 Update log:
 Last updated        | Version of main.py tested      | Test cases passed      | OS
 ------------------------------------------------------------------------------------------
@@ -14,6 +13,7 @@ Mar 1 @ 1125pm      | Mar 1, Commit 77a0a66          | 4/4                    | 
                                                      | 4/4                    | Windows
 Mar 2 @ 1148am      | Mar 2, Commit 5d07e49          | 4/4                    | Mac
                                                      | 4/4                    | Windows
+Mar 2 @ 306pm       | Mar 2, Commit 5d07e49          | 6/6                    | Windows
 
 Update list:
 Last updated        | Description of update
@@ -23,6 +23,7 @@ Feb 25 @ 1040pm     | Minor tweak to main
 Feb 27 @ 826pm      | Minor tweak to main
 Mar 1 @ 940pm       | Major tweak to all test cases
 Mar 1 @ 1124pm      | Tweak to Test Case 4 to ensure previous test case entries are cleared
+Mar 2 @ 302pm       | Creation of test cases 5 & 6
 
 To Run:
       - Follow instructions as listed in README.txt
@@ -62,7 +63,8 @@ Test Cases Descriptions:
         Foreign key relationships.
         Proper database updates.
         Correct filtering logic when querying related users.
-
+5) Coach Logs In and Remains a Coach
+6) User Cannot Login with Incorrect Password
 """
 
 from __future__ import annotations
@@ -136,13 +138,13 @@ def main():
 
     # ---- TESTS ----
 
-    def t_health(): # Verifies that the backend server is running and reachable
+    def t_health():
         r = client.get("/health")
         assert_eq(r.status_code, 200, "health should return 200")
         body = r.json()
         assert_true(body.get("ok") is True, f"health ok expected True, got: {pretty(body)}")
 
-    def t_register_then_login_roundtrip(): # Verifies that a new user can be registered and then successfully logged in using the same credentials
+    def t_register_then_login_roundtrip():
         # Use a semi-unique email so you can run multiple times without manual cleanup
         import time
         email = f"student_{int(time.time())}@example.com"
@@ -166,7 +168,7 @@ def main():
         assert_eq(user2["id"], user_id, "login should return same user id")
         assert_eq(user2["email"], email.lower(), "email should match")
 
-    def t_duplicate_email_rejected(): # Ensures the system prevents two accounts from being created with the same email
+    def t_duplicate_email_rejected():
         import time
         base = f"dup_{int(time.time())}@example.com"
         payload = {"email": base, "password": "pass1234", "role": "student", "fullName": "Dup PG"}
@@ -178,7 +180,7 @@ def main():
         # Your backend uses 400 for duplicates
         assert_eq(r2.status_code, 400, f"duplicate should be rejected; body={r2.text}")
 
-    def t_coach_assign_student_and_list(): # Verifies relational behavior between coach and student accounts
+    def t_coach_assign_student_and_list():
         import time
         ts = int(time.time())
         uid = uuid.uuid4().hex
@@ -201,11 +203,57 @@ def main():
         students = rl.json()
         assert_true(any(s["id"] == student_id for s in students), "student should appear under coach")
 
+    def t_coach_relogin_role_routes_to_coach_dashboard():
+        """
+        Human intent: After a coach logs out and logs back in, they should still be a coach.
+        Backend check: login response must indicate role == 'coach' (frontend should route to /coach-dashboard).
+        """
+        uid = uuid.uuid4().hex
+        coach_email = f"coach_relogin_{uid}@example.com"
+        password = "pass1234"
+
+        rc = client.post(
+            "/auth/register",
+            json={"email": coach_email, "password": password, "role": "coach", "fullName": "PG Coach Relogin"},
+        )
+        assert_eq(rc.status_code, 201, f"coach register failed: {rc.text}")
+
+        # "Logout" is frontend-only; we just log in again
+        r_login = client.post("/auth/login", json={"email": coach_email, "password": password})
+        assert_eq(r_login.status_code, 200, f"coach login should succeed; body={r_login.text}")
+        user = r_login.json()
+
+        assert_true("role" in user, f"login response missing 'role'; cannot verify dashboard routing. got={pretty(user)}")
+        assert_eq(user["role"], "coach", f"Expected role 'coach' after relogin; got={pretty(user)}")
+
+    def t_login_wrong_password_rejected():
+        """
+        Human intent: user logs out, then tries to login with wrong password; must fail.
+        Backend check: /auth/login must NOT return 200 when password is incorrect.
+        """
+        uid = uuid.uuid4().hex
+        email = f"wrongpw_{uid}@example.com"
+        password = "pass1234"
+
+        r_reg = client.post(
+            "/auth/register",
+            json={"email": email, "password": password, "role": "student", "fullName": "PG WrongPW User"},
+        )
+        assert_eq(r_reg.status_code, 201, f"register failed: {r_reg.text}")
+
+        r_bad = client.post("/auth/login", json={"email": email, "password": "NOT_THE_PASSWORD"})
+        assert_true(
+            r_bad.status_code != 200,
+            f"Login succeeded with wrong password (SECURITY BUG). status=200 body={r_bad.text}",
+        )
+
     tests = [
         ("health endpoint works", t_health),
         ("register->login roundtrip (Postgres)", t_register_then_login_roundtrip),
         ("duplicate email rejected (Postgres)", t_duplicate_email_rejected),
         ("coach assigns student and can list them (Postgres)", t_coach_assign_student_and_list),
+        ("coach relogin stays coach (Postgres)", t_coach_relogin_role_routes_to_coach_dashboard),
+        ("login wrong password rejected (Postgres)", t_login_wrong_password_rejected),
     ]
 
     results = [run_test(name, fn) for name, fn in tests]
