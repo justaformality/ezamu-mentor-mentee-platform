@@ -1,6 +1,10 @@
 """
 test_cases_backend_postgres.py
 
+Last updated        | Version of main.py tested      | Test cases passed
+------------------------------------------------------------------------
+Mar 1 @ 940pm       | Feb 21, Commit d1b9cf0         | 4/4
+
 ***
 Intended for WINDOWS and CMD ONLY
 ***
