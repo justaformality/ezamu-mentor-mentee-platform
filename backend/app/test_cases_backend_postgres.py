@@ -5,12 +5,13 @@ test_cases_backend_postgres.py
 Intended for WINDOWS and CMD ONLY
 ***
 
-Last updated        | Version of main.py tested      | Test cases passed
-------------------------------------------------------------------------
-Feb 25 @ 940pm      | Feb 21, Commit d1b9cf0         | 1/4
-Feb 25 @ 1040pm     | Feb 21, Commit d1b9cf0         | 1/4
-Feb 27 @ 826pm      | Feb 21, Commit d1b9cf0         | 1/4
-Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4
+Last updated        | Version of main.py tested      | Test cases passed      | OS
+------------------------------------------------------------------------------------------
+Feb 25 @ 940pm      | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
+Feb 25 @ 1040pm     | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
+Feb 27 @ 826pm      | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
+Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4                    | Windows
+                                                     | 3/4                    | Mac
 
 To Run:
       - Follow instructions as listed in README.txt
