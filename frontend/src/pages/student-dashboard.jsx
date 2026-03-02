@@ -17,6 +17,7 @@ function StudentDashboard() {
   const coachImages = {
     "Sarah Johnson": "/src/assets/imgs/coach-test.jpg",
     "Michael Chen": "/src/assets/imgs/coach-test2.jpg",
+    "Nina Perez": "/src/assets/imgs/coach-test.jpg",
   };
 
   //dummy data for now - will be replaced with API calls to fetch real data for the logged in student
@@ -37,8 +38,8 @@ function StudentDashboard() {
     },
     {
       id: 3,
-      coachName: "Sarah Johnson",
-      date: "Feb 19, 2026",
+      coachName: "Nina Perez",
+      date: "Feb 1, 2026",
       time: "1:00 PM",
       duration: "30 min",
     },
@@ -150,6 +151,12 @@ function StudentDashboard() {
   const incompleteItems = sortedItems.filter((item) => !completedItems[item.id]);
   const completedListItems = sortedItems.filter((item) => completedItems[item.id]);
 
+  const sortedAppointments = [...upcomingAppointments].sort((a, b) => { //created this so appointments are sorted by data
+    const dateA = new Date(`${a.date} ${a.time}`);
+    const dateB = new Date(`${b.date} ${b.time}`);
+    return dateA - dateB;
+  });
+
   //adding above this
 
   //the dashboard 
@@ -192,12 +199,12 @@ function StudentDashboard() {
 
                <p style={{ marginTop: "0", marginBottom: "1rem", color: "#666", fontSize: "0.9rem" }}>
                {upcomingAppointments.length > 0
-                 ? `You have ${upcomingAppointments.length} upcoming appointment(s). Next one is ${upcomingAppointments[0].date} at ${upcomingAppointments[0].time}.`
-                 : "No upcoming appointments scheduled."}
+                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). The next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.` //changed upcoming to sorted bc time
+                  : "No upcoming appointments scheduled."}
              </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {upcomingAppointments.map((appointment) => {
+                {sortedAppointments.map((appointment) => {
                   const { day, month } = formatDateBadge(appointment.date); //added this line!
                   const isCoachImage = coachImages[appointment.coachName];
                   return (
