@@ -28,7 +28,9 @@ Mar 1 @ 1124pm      | Tweak to Test Case 4 to ensure previous test case entries 
 To Run:
       - Follow instructions as listed in README.txt
       - Stop after Step 9
-      - Run: python app\test_cases_backend_postgres.py
+      - Run: 
+          - Windows: python app\test_cases_backend_postgres.py
+          - Mac: python3 app/test_cases_backend_postgres.py
 
 Test Cases Descriptions:
 1) Health Endpoint Test
