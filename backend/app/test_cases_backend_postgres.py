@@ -13,6 +13,8 @@ Feb 25 @ 1040pm     | Feb 21, Commit d1b9cf0         | 1/4                    | 
 Feb 27 @ 826pm      | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
 Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4                    | Windows
                                                      | 3/4                    | Mac
+Mar 1 @ 1125pm      | Mar 1, Commit 77a0a66          | 4/4                    | Mac
+                                                     | 4/4                    | Windows
 
 Update list:
 Last updated        | Description of update
@@ -21,6 +23,7 @@ Feb 25 @ 940pm      | Creation of file
 Feb 25 @ 1040pm     | Minor tweak to main
 Feb 27 @ 826pm      | Minor tweak to main
 Mar 1 @ 940pm       | Major tweak to all test cases
+Mar 1 @ 1124pm      | Tweak to Test Case 4 to ensure previous test case entries are cleared
 
 To Run:
       - Follow instructions as listed in README.txt
@@ -68,6 +71,7 @@ import json
 import importlib.util
 from pathlib import Path
 from typing import Any, Callable, Tuple
+import uuid
 
 from fastapi.testclient import TestClient
 
@@ -176,8 +180,9 @@ def main():
     def t_coach_assign_student_and_list(): # Verifies relational behavior between coach and student accounts
         import time
         ts = int(time.time())
-        coach_email = f"coach_{ts}@example.com"
-        student_email = f"student_{ts}@example.com"
+        uid = uuid.uuid4().hex
+        coach_email = f"coach_{uid}@example.com"
+        student_email = f"student_{uid}@example.com"
 
         rc = client.post("/auth/register", json={"email": coach_email, "password": "pass1234", "role": "coach", "fullName": "PG Coach"})
         rs = client.post("/auth/register", json={"email": student_email, "password": "pass1234", "role": "student", "fullName": "PG Student"})
