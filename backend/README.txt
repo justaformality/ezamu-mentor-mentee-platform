@@ -50,6 +50,7 @@ How to run (local)
    - \q 
 9) Set DATABASE_URL environment variable:
    - On Windows run: $env:DATABASE_URL="postgresql+psycopg2://<username>:<password>@localhost:5432/ezamu_db"
+         - if on CMD: set DATABASE_URL=postgresql+psycopg2://postgres:<password>@localhost:5432/ezamu_db
    - On Mac run: export DATABASE_URL="postgresql+psycopg2://<username>:<password>@localhost:5432/ezamu_db"
    - Be sure to replace username with the username of a user you created or using postgres superuser, and replace password with the password of the respective user you are using
 10) uvicorn app.main:app --reload --port 5000
