@@ -189,9 +189,14 @@ export default function CoachDashboard() {
               </a>
             ))}
           </div>
+          <p style={{ margin: "0.35rem 0 0", color: "#666" }}>{task.description}</p>
+          <p style={{ margin: "0.35rem 0 0", color: "#999", fontSize: "0.85rem" }}>
+            Priority: {task.priority}
+          </p>
         </div>
-      </div>
-      </div>
+    </div>
+</div>
+            
     </main>
   );
 }
