@@ -12,10 +12,10 @@ Feb 25 @ 1040pm     | Feb 21, Commit d1b9cf0         | 1/4
 Feb 27 @ 826pm      | Feb 21, Commit d1b9cf0         | 1/4
 Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4
 
-Runs test cases against the FastAPI app in main.py USING YOUR POSTGRES DATABASE_URL.
-- Does NOT modify main.py
-- Requires you to set DATABASE_URL in the terminal first
-- Uses FastAPI TestClient (in-process)
+To Run:
+      - Follow instructions as listed in README.txt
+      - Stop after Step 9
+      - Run: python app\test_cases_backend_postgres.py
 
 Test Cases Descriptions:
 1) Health Endpoint Test
@@ -49,11 +49,6 @@ Test Cases Descriptions:
         Proper database updates.
         Correct filtering logic when querying related users.
 
-Run:
-  cd backend
-  .venv\\Scripts\\activate
-  set DATABASE_URL=postgresql+psycopg2://...
-  python app\\test_cases_backend_postgres.py
 """
 
 from __future__ import annotations
