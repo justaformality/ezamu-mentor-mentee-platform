@@ -5,6 +5,7 @@ Update log:
 Last updated        | Version of main.py tested      | Test cases passed      | OS
 ------------------------------------------------------------------------------------------
 Mar 2 @ 1210pm      | Mar 2, Commit 5d07e49          | 4/4                    | Windows
+                                                     | 4/4                    | Mac
 
 Update list:
 Last updated        | Description of update
@@ -211,3 +212,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
