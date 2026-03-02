@@ -44,7 +44,7 @@ How to run (local)
                      Open a new CMD and test:
                      psql --version
          - mac (easy/lazy): /Library/PostgreSQL/<psql_ver_num>/bin/psql -U postgres
-               - to use "psql", run on terminal: echo 'export PATH="/Applications/PostgreSQL <num>/bin:$PATH"' >> ~/.zshrc
+               - to use "psql", run on terminal: echo 'export PATH="/Library/PostgreSQL/18/bin:$PATH"' >> ~/.zshrc
                                                  source ~/.zshrc
    - Enter the password you created during PostgreSQL installation
 6) Create a database 
