@@ -6,11 +6,13 @@ Last updated        | Version of main.py tested      | Test cases passed      | 
 ------------------------------------------------------------------------------------------
 Mar 2 @ 1210pm      | Mar 2, Commit 5d07e49          | 4/4                    | Windows
                                                      | 4/4                    | Mac
+Mar 2 @ 308pm       | Mar 2, Commit 5d07e49          | 6/6                    | Windows
 
 Update list:
 Last updated        | Description of update
 --------------------------------------------
 Mar 2 @ 1208pm      | Creation of file
+Mar 2 @ 302pm       | Creation of test cases 5 & 6
 
 
 To Run:
@@ -23,7 +25,7 @@ To Run:
             uvicorn app.main:app --reload --port 5000
 
             # Terminal 2 (run tests):
-            Mac Terminal (in backend folder WITH venv activated):
+            Mac Terminal:
             export API_BASE_URL="http://127.0.0.1:5000"
             python3 app/test_cases_backend_hosted.py
 
@@ -63,6 +65,8 @@ Test Cases Descriptions:
         Foreign key relationships.
         Proper database updates.
         Correct filtering logic when querying related users.
+5) Coach Logs In and Remains a Coach
+6) User Cannot Login with Incorrect Password
 
 
 """
@@ -185,11 +189,63 @@ def main():
         assert_true(isinstance(students, list), f"expected list; got: {pretty(students)}")
         assert_true(any(s.get("id") == student_id for s in students), "student should appear under coach")
 
+    def t_coach_relogin_role_routes_to_coach_dashboard():
+        """
+        Human intent: After a coach logs out and logs back in, they should still be a coach.
+        Backend check: login response must indicate role == 'coach' (frontend should route to /coach-dashboard).
+        """
+        uid = uuid.uuid4().hex
+        coach_email = f"coach_relogin_{uid}@example.com"
+        password = "pass1234"
+
+        # Create coach
+        rc = post_json(
+            "/auth/register",
+            {"email": coach_email, "password": password, "role": "coach", "fullName": "Hosted Coach Relogin"},
+        )
+        assert_eq(rc.status_code, 201, f"coach register failed: {rc.text}")
+
+        # "Logout" is frontend-only; for backend black-box tests, we just perform a fresh login again.
+        r_login = post_json("/auth/login", {"email": coach_email, "password": password})
+        assert_eq(r_login.status_code, 200, f"coach login should succeed; body={r_login.text}")
+        user = r_login.json()
+
+        assert_true("role" in user, f"login response missing 'role'; cannot verify dashboard routing. got={pretty(user)}")
+        assert_eq(user["role"], "coach", f"Expected role 'coach' after relogin; got={pretty(user)}")
+
+        # If role is coach, frontend should route to /coach-dashboard, not /student-dashboard.
+
+    def t_login_wrong_password_rejected():
+        """
+        Human intent: user logs out, then tries to login with wrong password; must fail.
+        Backend check: /auth/login must NOT return 200 when password is incorrect.
+        """
+        uid = uuid.uuid4().hex
+        email = f"wrongpw_{uid}@example.com"
+        password = "pass1234"
+
+        r_reg = post_json(
+            "/auth/register",
+            {"email": email, "password": password, "role": "student", "fullName": "Hosted WrongPW User"},
+        )
+        assert_eq(r_reg.status_code, 201, f"register failed: {r_reg.text}")
+
+        # Attempt login with incorrect password
+        r_bad = post_json("/auth/login", {"email": email, "password": "NOT_THE_PASSWORD"})
+        assert_true(
+            r_bad.status_code != 200,
+            f"Login succeeded with wrong password (SECURITY BUG). status=200 body={r_bad.text}",
+        )
+
+        # Most APIs use 401/403; your backend may use 400. We accept any non-200 as pass.
+
     tests = [
         ("health endpoint works (hosted)", t_health),
         ("register->login roundtrip (hosted)", t_register_then_login_roundtrip),
         ("duplicate email rejected (hosted)", t_duplicate_email_rejected),
         ("coach assigns student and can list them (hosted)", t_coach_assign_student_and_list),
+        ("coach relogin stays coach (hosted)", t_coach_relogin_role_routes_to_coach_dashboard),
+        ("login wrong password rejected (hosted)", t_login_wrong_password_rejected),
     ]
 
     results = [run_test(name, fn) for name, fn in tests]
@@ -210,6 +266,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
-
