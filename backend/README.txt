@@ -29,7 +29,7 @@ How to run (local)
    - macOS/Linux: source .venv/bin/activate
 4) pip install -r requirements.txt
 5) Install and run PostgreSQL locally (** External Installation, NOT given in requirements.txt **)
-   - psql -U postgres 
+   - psql -U postgres OR "C:\Program Files\PostgreSQL\<psql_ver_num>\bin\psql.exe" -U postgres
    - Enter the password you created during PostgreSQL installation
 6) Create a database 
    - CREATE DATABASE ezamu_db; 
