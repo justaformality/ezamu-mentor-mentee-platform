@@ -1,20 +1,53 @@
 """
 test_cases_backend_postgres.py
 
-Last updated        | Version of main.py tested      | Test cases passed
-------------------------------------------------------------------------
-Mar 1 @ 940pm       | Feb 21, Commit d1b9cf0         | 4/4
-Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4
-
-
 ***
 Intended for WINDOWS and CMD ONLY
 ***
+
+Last updated        | Version of main.py tested      | Test cases passed
+------------------------------------------------------------------------
+Feb 25 @ 940pm      | Feb 21, Commit d1b9cf0         | 1/4
+Feb 25 @ 1040pm     | Feb 21, Commit d1b9cf0         | 1/4
+Feb 27 @ 826pm      | Feb 21, Commit d1b9cf0         | 1/4
+Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4
 
 Runs test cases against the FastAPI app in main.py USING YOUR POSTGRES DATABASE_URL.
 - Does NOT modify main.py
 - Requires you to set DATABASE_URL in the terminal first
 - Uses FastAPI TestClient (in-process)
+
+Test Cases Descriptions:
+1) Health Endpoint Test
+      Verifies that the backend server is running and reachable.
+      This test sends a request to /health and confirms the API responds successfully.
+      It ensures the application starts correctly and the routing layer is functioning before testing any database logic.
+2) Register -> Login Roundtrip (Postgres)
+      Verifies that a new user can be registered and then successfully logged in using the same credentials.
+      This test confirms that:
+        A new user is saved into the Postgres database.
+        The password is properly hashed.
+        The same user can log in afterward.
+        The returned user data matches what was stored.
+        This validates both database persistence and authentication logic working together.
+3) Duplicate Email Rejection
+      Ensures the system prevents two accounts from being created with the same email.
+      This test registers a user once successfully, then attempts to register the same email again. It confirms that:
+        The backend enforces uniqueness.
+        The database constraint is working.
+        The API correctly returns an error response (400).
+        This protects against duplicate accounts and maintains data integrity.
+4) Coach Assigns Student and Can List Them
+      Verifies relational behavior between coach and student accounts.
+      This test:
+        Creates a coach account.
+        Creates a student account.
+        Assigns the student to the coach.
+        Confirms that the coach can retrieve the student in their list.
+      It validates:
+        Foreign key relationships.
+        Proper database updates.
+        Correct filtering logic when querying related users.
 
 Run:
   cd backend
@@ -93,13 +126,13 @@ def main():
 
     # ---- TESTS ----
 
-    def t_health():
+    def t_health(): # Verifies that the backend server is running and reachable
         r = client.get("/health")
         assert_eq(r.status_code, 200, "health should return 200")
         body = r.json()
         assert_true(body.get("ok") is True, f"health ok expected True, got: {pretty(body)}")
 
-    def t_register_then_login_roundtrip():
+    def t_register_then_login_roundtrip(): # Verifies that a new user can be registered and then successfully logged in using the same credentials
         # Use a semi-unique email so you can run multiple times without manual cleanup
         import time
         email = f"student_{int(time.time())}@example.com"
@@ -123,7 +156,7 @@ def main():
         assert_eq(user2["id"], user_id, "login should return same user id")
         assert_eq(user2["email"], email.lower(), "email should match")
 
-    def t_duplicate_email_rejected():
+    def t_duplicate_email_rejected(): # Ensures the system prevents two accounts from being created with the same email
         import time
         base = f"dup_{int(time.time())}@example.com"
         payload = {"email": base, "password": "pass1234", "role": "student", "fullName": "Dup PG"}
@@ -135,7 +168,7 @@ def main():
         # Your backend uses 400 for duplicates
         assert_eq(r2.status_code, 400, f"duplicate should be rejected; body={r2.text}")
 
-    def t_coach_assign_student_and_list():
+    def t_coach_assign_student_and_list(): # Verifies relational behavior between coach and student accounts
         import time
         ts = int(time.time())
         coach_email = f"coach_{ts}@example.com"
