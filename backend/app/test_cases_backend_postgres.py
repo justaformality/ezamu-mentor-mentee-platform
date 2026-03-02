@@ -12,6 +12,8 @@ Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4                    | 
                                                      | 3/4                    | Mac
 Mar 1 @ 1125pm      | Mar 1, Commit 77a0a66          | 4/4                    | Mac
                                                      | 4/4                    | Windows
+Mar 2 @ 1148am      | Mar 2, Commit 5d07e49          | 4/4                    | Mac
+                                                     | 4/4                    | Windows
 
 Update list:
 Last updated        | Description of update
