@@ -36,18 +36,19 @@ class User(Base):
     coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
 
     coach = relationship("User", remote_side=[id], backref="students")
-    appointments = relationship("Appointment", back_populates="user")
     action_items = relationship("ActionItem", back_populates="user")
 
 class Appointment(Base):
     __tablename__ = "appointments"
 
     id = Column(Integer, primary_key = True, index = True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    student_id = Column(Integer, ForeignKey("users.id"), nullable = False)
+    coach_id = Column(Integer, ForeignKey("users.id"), nullable = False)
     title = Column(String, nullable = False)
     scheduledAt = Column(DateTime, nullable = False)
 
-    user = relationship("User", back_populates="appointments")
+    student = relationship("User", foreign_keys =[student_id], backref="student_appointments")
+    coach = relationship("User", foreign_keys = [coach_id], backref="coach_appointments")
 
 class ActionItem(Base):
     __tablename__ = "action_items"
@@ -151,6 +152,12 @@ class AvailabilityOut(BaseModel):
     start_time: str
     end_time: str
 
+class BookAppointmentIn(BaseModel):
+    student_id: int
+    coach_id: int
+    date: str 
+    time: str
+
 app = FastAPI(title="EZAMU POC Backend (DB)")
 
 # Adjust these if your frontend runs on a different origin
@@ -243,9 +250,22 @@ def get_appointments(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code = 404, detail = "User not found")
     
+    if user.role == "student":
+        appointments = db.query(Appointment).filter(Appointment.student_id == user_id).all()
+    elif user.role == "coach":
+        appointments = db.query(Appointment).filter(Appointment.coach_id == user_id).all()
+    else:
+        appointments = []
+
     return [
-        {"id": a.id, "title": a.title, "scheduledAt": a.scheduledAt.isoformat()}
-        for a in user.appointments
+        {
+            "id": a.id, 
+            "student_id": a.student_id,
+            "coach_id": a.coach_id,
+            "title": a.title, 
+            "scheduledAt": a.scheduledAt.isoformat()
+        }
+        for a in appointments
     ]
 
 @app.get("/users/{user_id}/action_items")
@@ -385,3 +405,54 @@ def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
         }
         for coach in available_coaches
     ]
+
+@app.post("/appointments/book")
+def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == booking.student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    coach = db.query(User).filter(User.id == booking.coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    try:
+        requested_date = datetime.strptime(booking.date, "%Y-%m-%d").date()
+        requested_time = datetime.strptime(booking.time, "%H:%M").time()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date or time format")
+
+    slot = (
+        db.query(CoachAvailability)
+        .filter(
+            CoachAvailability.coach_id == booking.coach_id,
+            CoachAvailability.date == requested_date,
+            CoachAvailability.start_time <= requested_time,
+            CoachAvailability.end_time > requested_time
+        )
+        .first()
+    )
+
+    if not slot:
+        raise HTTPException(status_code=400, detail="Coach not available at this time")
+    
+    appointment_datetime = datetime.combine(requested_date, requested_time)
+    new_appointment = Appointment(
+        student_id = booking.student_id,
+        coach_id = booking.coach_id,
+        title = "Coaching Session",
+        scheduledAt = appointment_datetime
+    )
+
+    db.add(new_appointment)
+    db.commit()
+    db.delete(slot)
+    db.commit()
+    db.refresh(new_appointment)
+
+    return {
+        "id": new_appointment.id,
+        "student_id": new_appointment.student_id,
+        "coach_id": new_appointment.coach_id,
+        "title": new_appointment.title,
+        "scheduledAt": new_appointment.scheduledAt.isoformat()
+    }
