@@ -1,20 +1,6 @@
 """
 test_cases_backend_hosted.py
 
-Update log:
-Last updated        | Version of main.py tested      | Test cases passed      | OS
-------------------------------------------------------------------------------------------
-Mar 2 @ 1210pm      | Mar 2, Commit 5d07e49          | 4/4                    | Windows
-                                                     | 4/4                    | Mac
-Mar 2 @ 308pm       | Mar 2, Commit 5d07e49          | 6/6                    | Windows
-
-Update list:
-Last updated        | Description of update
---------------------------------------------
-Mar 2 @ 1208pm      | Creation of file
-Mar 2 @ 302pm       | Creation of test cases 5 & 6
-
-
 To Run:
       - Start Frontend
         - cd into frontend folder

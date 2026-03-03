@@ -1,30 +1,6 @@
 """
 test_cases_backend_postgres.py
 
-Update log:
-Last updated        | Version of main.py tested      | Test cases passed      | OS
-------------------------------------------------------------------------------------------
-Feb 25 @ 940pm      | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
-Feb 25 @ 1040pm     | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
-Feb 27 @ 826pm      | Feb 21, Commit d1b9cf0         | 1/4                    | Windows
-Mar 1 @ 940pm       | Mar 1, Commit 77a0a66          | 4/4                    | Windows
-                                                     | 3/4                    | Mac
-Mar 1 @ 1125pm      | Mar 1, Commit 77a0a66          | 4/4                    | Mac
-                                                     | 4/4                    | Windows
-Mar 2 @ 1148am      | Mar 2, Commit 5d07e49          | 4/4                    | Mac
-                                                     | 4/4                    | Windows
-Mar 2 @ 306pm       | Mar 2, Commit 5d07e49          | 6/6                    | Windows
-
-Update list:
-Last updated        | Description of update
---------------------------------------------
-Feb 25 @ 940pm      | Creation of file
-Feb 25 @ 1040pm     | Minor tweak to main
-Feb 27 @ 826pm      | Minor tweak to main
-Mar 1 @ 940pm       | Major tweak to all test cases
-Mar 1 @ 1124pm      | Tweak to Test Case 4 to ensure previous test case entries are cleared
-Mar 2 @ 302pm       | Creation of test cases 5 & 6
-
 To Run:
       - Follow instructions as listed in README.txt
       - Stop after Step 9
