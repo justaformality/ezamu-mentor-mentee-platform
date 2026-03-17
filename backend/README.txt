@@ -21,6 +21,8 @@ REGISTER supports ANY of:
 LOGIN supports:
 - { "email": "...", "password": "..." }
 
+IMPORTANT: Make sure you are using python versions 3.11 or 3.12
+
 How to run (local)
 1) cd into this folder
 2) python -m venv .venv
