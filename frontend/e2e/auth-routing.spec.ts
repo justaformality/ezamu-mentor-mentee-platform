@@ -6,6 +6,7 @@ Last updated        | Version of main.py tested      | Test cases passed      | 
 ---------------------------------------------------------------------------------------------------------
 Mar 2 @ 438pm       | Mar 2, Commit 5d07e49          | 0/2                    | Windows   | No POST /auth/login request sent by frontend 
                                                                                             (everything done client-side)
+Mar 16 @ 5:05pm     | Mar 2, Commit 5d07e49          | 1/2                    | Windows   | Password check passes, wrong redirect for coaches
 
 
 To run:
@@ -93,6 +94,7 @@ test("Case 1: coach relogin should land on coach dashboard (not student)", async
 test("Case 2: wrong password must not log in", async ({ page }) => {
   const email = uniqueEmail("student");
   const password = "pass1234";
+  const wrongPassword = "abc123";
 
   // Sign up as student
   await page.goto("/signup");
@@ -110,13 +112,22 @@ test("Case 2: wrong password must not log in", async ({ page }) => {
   // Attempt login with wrong password
   await page.goto("/signin");
   await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', "WRONG_PASSWORD");
+  await page.fill('input[name="password"]', wrongPassword);
   await page.click('button[type="submit"]');
 
-  // Assert frontend actually calls backend for login; currently it doesn't.
-  await expectAuthLoginRequest(page);
+  // Handle alert popup
+  let dialogMessage = "";
+  page.once("dialog", async (dialog) => {
+    dialogMessage = dialog.message();
+    await dialog.accept();
+  });
 
-  // Expected behavior: should NOT reach any dashboard on wrong password
+  // Confirm the alert was the expected one
+  await expect.poll(() => dialogMessage).toContain("Invalid email or password");
+
+  // Confirm user did NOT log in
+  await expect(page).toHaveURL(/\/signin$/);
   await expect(page).not.toHaveURL(/\/student-dashboard$/);
   await expect(page).not.toHaveURL(/\/coach-dashboard$/);
+
 });

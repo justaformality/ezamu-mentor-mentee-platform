@@ -20,32 +20,48 @@ function SignInPage() {
     }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
+    console.log("SIGNIN FILE - 3/16 455");
     e.preventDefault();
-    
-    //for now to test pages just uncomment what u wanna go to after signin
-    navigate("/student-dashboard");
-    //navigate("/coach-dashboard");
 
-    //to be developed based on db
-    // if (!form.role) {
-    //   setMessage("Please select a role");
-    //   return;
-    // }
+    try {
+      const API_BASE =
+        import.meta.env.VITE_API_URL ||
+        "http://127.0.0.1:5000";
 
-    // // Store user data with role in localStorage
-    // const userData = {
-    //   email: form.email,
-    //   role: form.role,
-    // };
-    // localStorage.setItem("user", JSON.stringify(userData));
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
 
-    // // Redirect based on role
-    // if (form.role === "student") {
-    //   navigate("/student-dashboard");
-    // } else if (form.role === "coach") {
-    //   navigate("/coach-dashboard");
-    // }
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.detail || "Invalid email or password");
+        return;
+      }
+
+      // Save logged-in user info for navbar/dashboard use
+      localStorage.setItem("user", JSON.stringify(data));
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("email", data.email);
+
+      // Redirect based on backend role
+      if (data.role === "coach") {
+        navigate("/coach-dashboard");
+      } else {
+        navigate("/student-dashboard");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Could not connect to the backend. Make sure the server is running.");
+    }
   }
 
   return (
