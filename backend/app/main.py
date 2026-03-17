@@ -101,6 +101,8 @@ def _map_role(payload: Dict[str, Any]) -> str:
         return "coach"
     if role in {"admin"}:
         return "admin"
+    if role in {"mentor"}:
+        return "mentor"
 
     # If unknown, still store it (but this keeps your data consistent)
     return "student"

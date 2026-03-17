@@ -102,6 +102,7 @@ function Navbar() {
               <>
                 <Link to="/appointments">Appointments</Link>
                 <Link to="/assessment">Assessments Form</Link>
+                <Link to="/coaches">Coaches</Link>
                 <Link to="/profile">My Profile</Link>
                 {user && (
                   <button
