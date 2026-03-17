@@ -21,7 +21,6 @@ function SignInPage() {
   }
 
   async function handleSubmit(e) {
-    console.log("SIGNIN FILE - 3/16 455");
     e.preventDefault();
 
     try {
@@ -53,7 +52,7 @@ function SignInPage() {
       localStorage.setItem("email", data.email);
 
       // Redirect based on backend role
-      if (data.role === "coach") {
+      if (data.role === "coach" || data.role === "mentor") {
         navigate("/coach-dashboard");
       } else {
         navigate("/student-dashboard");
