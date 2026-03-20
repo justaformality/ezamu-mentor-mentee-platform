@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 //adding stuff under this!
 
 const formatDateBadge = (dateStr) => {
@@ -13,6 +13,14 @@ const formatDateBadge = (dateStr) => {
 
 function StudentDashboard() {
   const [completedItems, setCompletedItems] = useState({});
+  const [studentName, setStudentName] = useState("");
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setStudentName(parsed.fullName || parsed.name || "Student");
+    }
+  }, []);
 
   const coachImages = {
     "Sarah Johnson": "/src/assets/imgs/coach-test.jpg",
@@ -164,13 +172,17 @@ function StudentDashboard() {
     <main
       style={{
         width: "100%",
+        minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
-        padding: "2.5rem 2rem 4rem",
+        padding: "1.5rem 1rem 2.5rem",
+        background: "linear-gradient(180deg, #6b0f1f 0%, #9b2838 40%, #f8d5d8 100%)",
       }}
     >
       <div style={{ maxWidth: "1200px", width: "100%" }}>
-        <h1 style={{ marginBottom: "2rem", color: "#333" }}>Student Dashboard</h1>
+        <h1 style={{ marginBottom: "1rem", color: "#fff", fontSize: "2.25rem", textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+          Welcome, {studentName}!
+        </h1>
 
         <div
           style={{
@@ -277,6 +289,61 @@ function StudentDashboard() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Quick Access Tiles */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+              <a
+                href="/broken-link"
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#fff",
+                    borderRadius: "10px",
+                    padding: "1rem",
+                    border: "2px solid #e9ecef",
+                    boxShadow: "0 5px 10px rgba(0,0,0,0.06)",
+                    minHeight: "120px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#7f1d28" }}>S.M.A.R.T. Goals</h3>
+                  <p style={{ margin: "0.5rem 0 0", color: "#666" }}>View your goal strategy and progress</p>
+                </div>
+              </a>
+
+              <a
+                href="/broken-link"
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#fff",
+                    borderRadius: "10px",
+                    padding: "1rem",
+                    border: "2px solid #e9ecef",
+                    boxShadow: "0 5px 10px rgba(0,0,0,0.06)",
+                    minHeight: "120px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#7f1d28" }}>Your Team</h3>
+                  <p style={{ margin: "0.5rem 0 0", color: "#666" }}>Meet your mentors and collaborators</p>
+                </div>
+              </a>
             </div>
 
             {/* Recent Personality Results */}

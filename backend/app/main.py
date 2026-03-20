@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import os
 import json
+import shutil
+
 from datetime import datetime, timezone, date, time
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
+
+from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
@@ -32,6 +36,7 @@ class User(Base):
     role = Column(String, default = "student")
     fullName = Column(String, default = "")
     createdAt = Column(DateTime, default=datetime.now(timezone.utc))
+    profile_pic_url = Column(String, nullable=True)  # URL or path to profile picture
 
     coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
 
@@ -70,6 +75,9 @@ class CoachAvailability(Base):
     end_time = Column(Time, nullable = False)
 
     coach = relationship("User", backref="availability_slots")
+
+class ChangeEmailIn(BaseModel):
+    new_email: EmailStr
 
 Base.metadata.create_all(bind=engine)
 
@@ -142,6 +150,7 @@ class UserOut(BaseModel):
     role: str
     fullName: Optional[str] = None
     createdAt: str
+    profile_pic_url: Optional[str] = None
 
 class AvailabilityIn(BaseModel):
     date: str # YYYY-MM-DD
@@ -177,6 +186,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+static_path = os.path.join(os.path.dirname(__file__), "..", "static")
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 def get_db():
     db = SessionLocal()
@@ -222,7 +234,7 @@ def register(user_in: RegisterIn, db: Session = Depends(get_db)):
 
 @app.post("/auth/login", response_model=UserOut)
 def login(user_in: LoginIn, db: Session = Depends(get_db)):
-    email = _normalize_email(user_in.email)
+    email = str(user_in.email)
     user = db.query(User).filter(User.email == email).first()
 
     if not user or not pwd_context.verify(user_in.password, user.password_hash):
@@ -233,7 +245,8 @@ def login(user_in: LoginIn, db: Session = Depends(get_db)):
         email = user.email,
         role = user.role,
         fullName = user.fullName or None,
-        createdAt = user.createdAt.isoformat()
+        createdAt = user.createdAt.isoformat(),
+        profile_pic_url = user.profile_pic_url if hasattr(user, 'profile_pic_url') else None
     )
 
 
@@ -280,6 +293,48 @@ def get_action_items(user_id: int, db: Session = Depends(get_db)):
         {"id": ai.id, "description": ai.description, "completed": ai.completed}
         for ai in user.action_items
     ]
+
+@app.post("/users/{user_id}/change_email/")
+def change_email(user_id: int, data: ChangeEmailIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_email = str(data.new_email)
+
+    # Only block if the new email (case-sensitive) matches another user's email
+    existing = db.query(User).filter(
+        User.id != user.id,
+        User.email == new_email
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email is already registered")
+
+    user.email = new_email
+    db.commit()
+    db.refresh(user)
+    return {"message": "Email updated successfully", "user_id": user.id, "new_email": user.email}
+
+# Profile picture upload endpoint
+@app.post("/users/{user_id}/upload_profile_pic/")
+def upload_profile_pic(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if file.content_type != "image/png":
+        raise HTTPException(status_code=400, detail="Only PNG files are allowed")
+    # Save file to static/profile_pics/{user_id}.png
+    static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "profile_pics")
+    os.makedirs(static_dir, exist_ok=True)
+    file_path = os.path.join(static_dir, f"{user_id}.png")
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    # Store relative URL (frontend can use /static/profile_pics/{user_id}.png)
+    rel_url = f"/static/profile_pics/{user_id}.png"
+    user.profile_pic_url = rel_url
+    db.commit()
+    db.refresh(user)
+    return {"message": "Profile picture updated", "profile_pic_url": rel_url}
 
 @app.get("/coaches/{coach_id}/students")
 def get_coach_students(coach_id: int, db: Session = Depends(get_db)):

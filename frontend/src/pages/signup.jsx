@@ -8,6 +8,7 @@ function SignUpPage() {
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "student",
   });
 
@@ -24,6 +25,11 @@ function SignUpPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setMessage("Passwords do not match. Please check and try again.");
+      return;
+    }
+
     setIsLoading(true);
     setMessage("");
 
@@ -45,21 +51,22 @@ function SignUpPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store user data in localStorage
+        // Store user data in localStorage and set on window for immediate navbar update
         const userData = {
           email: form.email,
           role: form.role,
         };
         localStorage.setItem("user", JSON.stringify(userData));
+        window.user = userData;
 
         setMessage("Sign up successful! Redirecting...");
-        
-        // Redirect based on role
+
+        // Force reload to update navbar state
         setTimeout(() => {
           if (form.role === "student") {
-            navigate("/student-dashboard");
+            window.location.href = "/student-dashboard";
           } else if (form.role === "coach" || form.role === "mentor") {
-            navigate("/coach-dashboard");
+            window.location.href = "/coach-dashboard";
           }
         }, 500);
       } else {
@@ -76,20 +83,37 @@ function SignUpPage() {
   return (
     <main
       style={{
-        padding: "2rem",
-        maxWidth: "450px",
-        margin: "0 auto",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        padding: "2.5rem 2rem 1rem",
+        background: "linear-gradient(180deg, #7e0f1f 0%, #b53f4f 52%, #f7c5c8 100%)",
       }}
     >
-      <h1>Create an Account</h1>
-      <p style={{ marginBottom: "1.5rem" }}>
-        Sign up as a student, mentor, or counselor.
-      </p>
-
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+      <article
+        style={{
+          width: "100%",
+          maxWidth: "450px",
+          marginTop: "1rem",
+          padding: "1.8rem",
+          borderRadius: "1.2rem",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.83) 100%)",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.22)",
+          border: "1px solid rgba(255,255,255,0.62)",
+        }}
       >
+        <h1 style={{ textAlign: "center", margin: "0 0 1rem", color: "#66111b" }}>
+          Create an Account
+        </h1>
+        <p style={{ marginBottom: "1.25rem", textAlign: "center", color: "#5f1f2c" }}>
+          Sign up as a student, mentor, or counselor.
+        </p>
+
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+        >
         <label>
           Full Name
           <input
@@ -98,7 +122,16 @@ function SignUpPage() {
             required
             value={form.fullName}
             onChange={handleChange}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+            style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }}
           />
         </label>
 
@@ -110,7 +143,16 @@ function SignUpPage() {
             required
             value={form.email}
             onChange={handleChange}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+            style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }}
           />
         </label>
 
@@ -122,7 +164,37 @@ function SignUpPage() {
             required
             value={form.password}
             onChange={handleChange}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+            style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }}
+          />
+        </label>
+
+        <label>
+          Confirm Password
+          <input
+            type="password"
+            name="confirmPassword"
+            required
+            value={form.confirmPassword}
+            onChange={handleChange}
+            style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }} 
           />
         </label>
 
@@ -132,7 +204,16 @@ function SignUpPage() {
             name="role"
             value={form.role}
             onChange={handleChange}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
+            style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }}
           >
             <option value="student">Student</option>
             <option value="mentor">Career Coach/Counselor</option>
@@ -146,7 +227,7 @@ function SignUpPage() {
           style={{
             marginTop: "0.5rem",
             padding: "0.75rem",
-            backgroundColor: isLoading ? "#ccc" : "#f44336",
+            backgroundColor: isLoading ? "#ccc" : "#5f1f2c",
             color: "white",
             border: "none",
             borderRadius: "0.4rem",
@@ -180,7 +261,8 @@ function SignUpPage() {
           {message}
         </p>
       )}
-    </main>
+    </article>
+  </main>
   );
 }
 
