@@ -160,28 +160,37 @@ export default function ProfilePage() {
 		>
 			<div style={{ width: "100%", maxWidth: 1200, display: "flex", gap: 32 }}>
 				{/* Left: Profile summary */}
-				<div style={{ minWidth: 260, maxWidth: 320, flex: "0 0 300px", paddingRight: 32 }}>
-					<div style={{ fontSize: 24, fontWeight: 500, marginBottom: 24 }}>My Profile</div>
+				{/* <div style={{ minWidth: 260, maxWidth: 320, flex: "0 0 300px", paddingRight: 32 }}>  and added section below this line */}
+				<div style={{
+					minWidth: 260,
+					maxWidth: 320,
+					flex: "0 0 300px",
+					}}>
+					<div style={{
+						background: "#ffffff",
+						borderRadius: 16,
+						padding: 24,
+						boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+						color: "#333"
+					}}>
+					<div style={{ fontSize: 22, fontWeight: 600, marginBottom: 16, color: "#6b0f1f" }}>My Profile</div> 
+					{/* made a change in the line above and section below*/}
 					<div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 }}>
-						<div
-							style={{
-								width: 80,
-								height: 80,
-								borderRadius: "50%",
-								background: "#fff",
-								marginBottom: 8,
-								overflow: "hidden",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-						>
+						<div style={{
+							width: 100,
+							height: 100,
+							borderRadius: "50%",
+							overflow: "hidden",
+							border: "4px solid #6b0f1f",
+							boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+							marginBottom: 12
+							}}>
 							{profilePic ? (
-								<img src={profilePic} alt="Profile" style={{ width: 80, height: 80, objectFit: "cover" }} />
+								<img src={profilePic} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
 							) : (
-								<div style={{ width: 80, height: 80, borderRadius: "50%", background: "#eee" }} />
+								<div style={{ width: "100%", height: "100%", background: "#eee" }} />
 							)}
-						</div>
+							</div>
 						<button
 							style={{ color: "#fff", fontSize: 14, textDecoration: "underline", cursor: "pointer", background: "none", border: "none" }}
 							onClick={() => setShowPicModal(true)}
@@ -206,68 +215,161 @@ export default function ProfilePage() {
 									)}
 									{picUploadMsg && <div style={{ color: "#b00", marginTop: 8 }}>{picUploadMsg}</div>}
 									<div style={{ marginTop: 18, display: "flex", gap: 16 }}>
-										<button onClick={handleConfirmProfilePicUpload} style={{ padding: "6px 18px", borderRadius: 8, border: "none", background: "#6b0f1f", color: "#fff", cursor: "pointer" }}>Confirm</button>
-										<button onClick={() => { setShowPicModal(false); setPicPreview(null); setSelectedPicFile(null); }} style={{ padding: "6px 18px", borderRadius: 8, border: "none", background: "#eee", color: "#6b0f1f", cursor: "pointer" }}>Cancel</button>
+										<button onClick={handleConfirmProfilePicUpload} 
+										style={{
+											background: "#6b0f1f",
+											color: "#fff",
+											border: "none",
+											borderRadius: 10,
+											padding: "8px 18px",
+											fontWeight: 500,
+											cursor: "pointer",
+											transition: "0.2s",
+											}}>Confirm</button>
+										<button onClick={() => { setShowPicModal(false); setPicPreview(null); setSelectedPicFile(null); }} 
+										style={{
+											background: "#6b0f1f",
+											color: "#fff",
+											border: "none",
+											borderRadius: 10,
+											padding: "8px 18px",
+											fontWeight: 500,
+											cursor: "pointer",
+											transition: "0.2s",
+											}}>Cancel</button>
 									</div>
 								</div>
 							</div>
 						)}
 					</div>
-					<div style={{ fontSize: 15, marginBottom: 6 }}>Name: <span style={{ color: "#ffe" }}>{user?.fullName || "Name"}</span></div>
-					<div style={{ fontSize: 15, marginBottom: 6 }}>Email: <span style={{ color: "#ffe" }}>{user?.email || "Email"}</span></div>
+					{/* changed the div styles for name and email below */}
+					<div style={{ fontSize: 14, marginBottom: 10, color: "#555" }}>Name: <span style={{ color: "#6f121f" }}>{user?.fullName || "Name"}</span></div>
+					<div style={{ fontSize: 14, marginBottom: 10, color: "#555" }}>Email: <span style={{ color: "#6f121f" }}>{user?.email || "Email"}</span></div>
+				</div>
 				</div>
 				{/* Divider */}
 				<div style={{ width: 2, background: "#fff", opacity: 0.5, margin: "0 24px" }} />
 				{/* Right: Forms */}
-				<div style={{ flex: 1, maxWidth: 520, marginTop: 12 }}>
+				<div style={{ flex: 1, maxWidth: 520 }}>
+				<div
+					style={{
+					background: "#ffffff",
+					borderRadius: 16,
+					padding: 28,
+					boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+					color: "#333",
+					}}
+				>
 					{/* Change Email */}
-					<form onSubmit={handleEmailChange} style={{ marginBottom: 40 }}>
-						<div style={{ fontSize: 18, fontWeight: 500, marginBottom: 10 }}>Change Email</div>
-						<div style={{ marginBottom: 8 }}>
-							<label htmlFor="new-email" style={{ fontSize: 14, marginRight: 12 }}>New Email</label>
-							<input
-								id="new-email"
-								type="email"
-								value={newEmail}
-								onChange={e => setNewEmail(e.target.value)}
-								style={{ padding: 6, borderRadius: 8, border: "none", width: 180, marginRight: 12 }}
-							/>
-							<button
-								type="submit"
-								style={{ background: "#6b0f1f", color: "#fff", border: "none", borderRadius: 16, padding: "6px 22px", fontWeight: 500, cursor: "pointer" }}
-							>Change</button>
-						</div>
-						{emailMsg && <div style={{ color: "#ffe", fontSize: 13, marginTop: 4 }}>{emailMsg}</div>}
+					<form onSubmit={handleEmailChange} style={{ marginBottom: 32 }}>
+					<div style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>
+						Change Email
+					</div>
+
+					<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+						<label htmlFor="new-email" style={{ fontSize: 14 }}>
+						New Email
+						</label>
+
+						<input
+						id="new-email"
+						type="email"
+						value={newEmail}
+						onChange={(e) => setNewEmail(e.target.value)}
+						style={{
+							padding: "8px 12px",
+							borderRadius: 10,
+							border: "1px solid #ddd",
+							width: 220,
+							outline: "none",
+						}}
+						/>
+
+						<button
+						type="submit"
+						style={{
+							background: "#6b0f1f",
+							color: "#fff",
+							border: "none",
+							borderRadius: 10,
+							padding: "8px 18px",
+							fontWeight: 500,
+							cursor: "pointer",
+						}}
+						>
+						Change
+						</button>
+					</div>
+
+					{emailMsg && (
+						<div style={{ fontSize: 13, marginTop: 8 }}>{emailMsg}</div>
+					)}
 					</form>
+
 					{/* Change Password */}
 					<form onSubmit={handlePasswordChange}>
-						<div style={{ fontSize: 18, fontWeight: 500, marginBottom: 10 }}>Change Password</div>
-						<div style={{ marginBottom: 8 }}>
-							<label htmlFor="current-pw" style={{ fontSize: 14, marginRight: 12 }}>Current Password</label>
-							<input
-								id="current-pw"
-								type="password"
-								value={currentPassword}
-								onChange={e => setCurrentPassword(e.target.value)}
-								style={{ padding: 6, borderRadius: 8, border: "none", width: 180, marginRight: 12 }}
-							/>
-						</div>
-						<div style={{ marginBottom: 8 }}>
-							<label htmlFor="new-pw" style={{ fontSize: 14, marginRight: 12 }}>New Password</label>
-							<input
-								id="new-pw"
-								type="password"
-								value={newPassword}
-								onChange={e => setNewPassword(e.target.value)}
-								style={{ padding: 6, borderRadius: 8, border: "none", width: 180, marginRight: 12 }}
-							/>
-						</div>
+					<div style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>
+						Change Password
+					</div>
+
+					<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+						<label htmlFor="current-pw" style={{ fontSize: 14 }}>
+						Current Password
+						</label>
+
+						<input
+						id="current-pw"
+						type="password"
+						value={currentPassword}
+						onChange={(e) => setCurrentPassword(e.target.value)}
+						style={{
+							padding: "8px 12px",
+							borderRadius: 10,
+							border: "1px solid #ddd",
+							width: 220,
+							outline: "none",
+						}}
+						/>
+
+						<label htmlFor="new-pw" style={{ fontSize: 14 }}>
+						New Password
+						</label>
+
+						<input
+						id="new-pw"
+						type="password"
+						value={newPassword}
+						onChange={(e) => setNewPassword(e.target.value)}
+						style={{
+							padding: "8px 12px",
+							borderRadius: 10,
+							border: "1px solid #ddd",
+							width: 220,
+							outline: "none",
+						}}
+						/>
+
 						<button
-							type="submit"
-							style={{ background: "#6b0f1f", color: "#fff", border: "none", borderRadius: 16, padding: "6px 22px", fontWeight: 500, cursor: "pointer", marginTop: 6 }}
-						>Change</button>
-						{pwMsg && <div style={{ color: "#ffe", fontSize: 13, marginTop: 4 }}>{pwMsg}</div>}
+						type="submit"
+						style={{
+							background: "#6b0f1f",
+							color: "#fff",
+							border: "none",
+							borderRadius: 10,
+							padding: "8px 18px",
+							fontWeight: 500,
+							cursor: "pointer",
+						}}
+						>
+						Change
+						</button>
+					</div>
+
+					{pwMsg && (
+						<div style={{ fontSize: 13, marginTop: 8 }}>{pwMsg}</div>
+					)}
 					</form>
+				</div>
 				</div>
 			</div>
 		</main>
