@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean, Table
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -34,8 +34,12 @@ class User(Base):
     createdAt = Column(DateTime, default=datetime.now(timezone.utc))
 
     coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
+    parentID = Column(Integer, ForeignKey("users.id"), nullable = True)
+    peerID = Column(Integer, ForeignKey("users.id"), nullable = True)
 
-    coach = relationship("User", remote_side=[id], backref="students")
+    coach = relationship("User", remote_side=[id], foreign_keys=[coachID], backref="coached_students")
+    parent = relationship("User", remote_side=[id], foreign_keys=[parentID], backref="children")
+    peer = relationship("User", remote_side=[id], foreign_keys=[peerID], backref="peers")
     action_items = relationship("ActionItem", back_populates="user")
 
 class Appointment(Base):
@@ -94,17 +98,15 @@ def _map_role(payload: Dict[str, Any]) -> str:
     role = str(role).strip().lower()
 
     # Normalize common variants
-    # user -> student (matches your existing backend naming)
     if role in {"user", "student"}:
         return "student"
     if role in {"coach"}:
         return "coach"
     if role in {"admin"}:
         return "admin"
-    if role in {"mentor"}:
-        return "mentor"
+    if role in {"parent"}:
+        return "parent"
 
-    # If unknown, still store it (but this keeps your data consistent)
     return "student"
 
 
@@ -119,11 +121,9 @@ def _map_full_name(payload: Dict[str, Any]) -> str:
 
 
 class RegisterIn(BaseModel):
-    # Keep strict for email/pass; other fields are optional
     email: EmailStr
     password: str = Field(min_length=4)
 
-    # Optional fields that your frontend might send
     fullName: Optional[str] = None
     role: Optional[str] = None
     accountType: Optional[str] = None
@@ -162,7 +162,6 @@ class BookAppointmentIn(BaseModel):
 
 app = FastAPI(title="EZAMU POC Backend (DB)")
 
-# Adjust these if your frontend runs on a different origin
 allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -294,7 +293,39 @@ def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
             "fullName": student.fullName,
             "createdAt": student.createdAt.isoformat()
         }
-        for student in coach.students
+        for student in coach.coached_students
+    ]
+
+@app.get("/parents/{parent_id}/students")
+def get_parent_students(parent_id: int, db: Session = Depends(get_db)):
+    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    if not parent:
+        raise HTTPException(status_code = 404, detail = "Parent not found")
+    
+    return [
+        {
+            "id": student.id,
+            "email": student.email,
+            "fullName": student.fullName,
+            "createdAt": student.createdAt.isoformat()
+        }
+        for student in parent.children
+    ]
+
+@app.get("/peers/{peer_id}/students")
+def get_peer_students(peer_id: int, db: Session = Depends(get_db)):
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    if not peer:
+        raise HTTPException(status_code = 404, detail = "Peer not found")
+    
+    return [
+        {
+            "id": student.id,
+            "email": student.email,
+            "fullName": student.fullName,
+            "createdAt": student.createdAt.isoformat()
+        }
+        for student in peer.peers
     ]
 
 @app.post("/students/{student_id}/assign_coach/{coach_id}")
@@ -311,6 +342,40 @@ def assign_coach(student_id: int, coach_id: int, db: Session = Depends(get_db)):
     db.refresh(student)
 
     return {"message": "Coach assigned successfully"}
+
+@app.post("/students/{student_id}/assign_parent/{parent_id}")
+def assign_parent(student_id: int, parent_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    if not student:
+        raise HTTPException(status_code = 404, detail = "Student not found")
+    if not parent:
+        raise HTTPException(status_code = 404, detail = "Parent not found")
+    
+    student.parentID = parent_id
+    db.commit()
+    db.refresh(student)
+
+    return {"message": "Parent assigned successfully"}
+
+@app.post("/students/{student_id}/assign_peer/{peer_id}")
+def assign_peer(student_id: int, peer_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code = 404, detail = "Student not found")
+    if not peer:
+        raise HTTPException(status_code = 404, detail = "Peer not found")
+    if student_id == peer_id:
+        raise HTTPException(status_code = 400, detail = "Cannot assign a user to be their own peer")
+    
+    student.peerID = peer_id
+    peer.peerID = student_id
+    db.commit()
+    db.refresh(student)
+    db.refresh(peer)
+
+    return {"message": "Peer assigned successfully"}
 
 @app.get("/coaches/{coach_id}/students/{student_id}/action_items")
 def get_student_action_items(coach_id: int, student_id: int, db: Session = Depends(get_db)):
