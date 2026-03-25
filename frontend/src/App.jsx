@@ -1,6 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/navbar.jsx";
+
 import LandingPage from "./pages/landing-page.jsx";
 import SignUpPage from "./pages/signup.jsx";
 import SignInPage from "./pages/signin.jsx";
@@ -10,6 +11,8 @@ import CoachDashboard from "./pages/coach-dashboard.jsx";
 import Assessment from "./pages/assessment.jsx";
 import AppointmentPage from "./pages/appointment.jsx";
 import CoachSection from "./pages/coachsection.jsx";
+import ProfilePage from "./pages/profile.jsx";
+import ContactUs from "./pages/contactus.jsx";
 
 
 function App() {
@@ -26,6 +29,8 @@ function App() {
         <Route path="/assessment" element={<Assessment />} />
         <Route path="/appointments" element={<AppointmentPage />} />
         <Route path="/coaches" element={<CoachSection />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/contactus" element={<ContactUs />} />
       </Routes>
     </Router>
   );

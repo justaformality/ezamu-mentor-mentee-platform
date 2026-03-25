@@ -82,3 +82,9 @@ Where data is stored
 Notes
 - Passwords are stored as bcrypt hashes in PostgreSQL.
 - Duplicate email returns HTTP 400.
+
+IF YOU CREATED DATABASE BEFORE MARCH 19th RUN THIS QUERY FOR NEW USER COLUMN:
+
+```
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_pic_url VARCHAR(255);
+```

@@ -46,10 +46,8 @@ function SignInPage() {
         return;
       }
 
-      // Save logged-in user info for navbar/dashboard use
+      // Save full user object (including profile_pic_url) for navbar/dashboard/profile use
       localStorage.setItem("user", JSON.stringify(data));
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("email", data.email);
 
       // Redirect based on backend role
       if (data.role === "coach" || data.role === "mentor") {
@@ -57,6 +55,7 @@ function SignInPage() {
       } else {
         navigate("/student-dashboard");
       }
+      setTimeout(() => window.location.reload(), 100); // force reload to update navbar state
     } catch (err) {
       console.error("Login error:", err);
       alert("Could not connect to the backend. Make sure the server is running.");
@@ -66,61 +65,97 @@ function SignInPage() {
   return (
     <main
       style={{
-        padding: "2rem",
-        maxWidth: "400px",
-        margin: "0 auto",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        padding: "2.5rem 2rem 1rem",
+        background: "linear-gradient(180deg, #7e0f1f 0%, #b53f4f 52%, #f7c5c8 100%)",
       }}
     >
-      <h1>Sign In</h1>
-      <p style={{ marginBottom: "1.5rem" }}>
-        Enter your email and password to login to your existing account.
-      </p>
-
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+      <article
+        style={{
+          width: "100%",
+          maxWidth: "420px",
+          padding: "2rem",
+          borderRadius: "1.2rem",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.85) 100%)",
+          border: "1px solid rgba(255,255,255,0.6)",
+        }}
       >
-        <label>
-          Email
-          <input
-            type="email"
-            name="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
-          />
-        </label>
+        <h1 style={{ textAlign: "center", margin: "0 0 1.2rem", color: "#66111b" }}>
+          Login To Your Account
+        </h1>
 
-        <label>
-          Password
-          <input
-            type="password"
-            name="password"
-            required
-            value={form.password}
-            onChange={handleChange}
-            style={{ width: "100%", padding: "0.5rem", marginTop: "0.25rem" }}
-          />
-        </label>
-
-        <button
-          type="submit"
-          style={{
-            marginTop: "0.5rem",
-            padding: "0.75rem",
-            backgroundColor: "#f44336",
-            color: "white",
-            border: "none",
-            borderRadius: "0.4rem",
-            cursor: "pointer",
-          }}
+        {/* form for signing in */}
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         >
-          Sign In
-        </button>
-      </form>
+          <label style={{ color: "#5f1f2c", fontSize: "0.95rem" }}>
+            Email
+            <input
+              type="email"
+              name="email"
+              required
+              value={form.email}
+              onChange={handleChange}
+              style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }}
+            />
+          </label>
 
-      {message && <p style={{ marginTop: "1rem", color: "gray" }}>{message}</p>}
+          <label style={{ color: "#5f1f2c", fontSize: "0.95rem" }}>
+            Password
+            <input
+              type="password"
+              name="password"
+              required
+              value={form.password}
+              onChange={handleChange}
+              style={{
+                width: "100%",
+                padding: "0.75rem 0.9rem",
+                marginTop: "0.35rem",
+                borderRadius: "999px",
+                border: "1px solid #e6b6bb",
+                background: "#fff",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+                outline: "none",
+              }}
+            />
+          </label>
+
+          <button
+            type="submit"
+            style={{
+              marginTop: "0.4rem",
+              padding: "0.8rem",
+              borderRadius: "999px",
+              backgroundColor: "#6e141a",
+              color: "#fff",
+              border: "1px solid #4d0d11",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Sign In
+          </button>
+        </form>
+
+        {message && (
+          <p style={{ marginTop: "1rem", textAlign: "center", color: "#55131d" }}>{message}</p>
+        )}
+      </article>
     </main>
   );
 }
