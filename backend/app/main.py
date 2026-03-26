@@ -36,6 +36,7 @@ class User(Base):
     fullName = Column(String, default = "")
     createdAt = Column(DateTime, default=datetime.now(timezone.utc))
     profile_pic_url = Column(String, nullable=True)  # URL or path to profile picture
+    archetype = Column(String, nullable=True)
 
     coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
     parentID = Column(Integer, ForeignKey("users.id"), nullable = True)
@@ -130,17 +131,18 @@ def _map_full_name(payload: Dict[str, Any]) -> str:
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=4)
-
     fullName: Optional[str] = None
     role: Optional[str] = None
-    accountType: Optional[str] = None
-    account_type: Optional[str] = None
-    full_name: Optional[str] = None
 
 
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=4)
 
 
 class UserOut(BaseModel):
@@ -150,6 +152,10 @@ class UserOut(BaseModel):
     fullName: Optional[str] = None
     createdAt: str
     profile_pic_url: Optional[str] = None
+    archetype: Optional[str] = None
+
+class ArchetypeIn(BaseModel):
+    archetype: str
 
 class AvailabilityIn(BaseModel):
     date: str # YYYY-MM-DD
@@ -244,7 +250,8 @@ def login(user_in: LoginIn, db: Session = Depends(get_db)):
         role = user.role,
         fullName = user.fullName or None,
         createdAt = user.createdAt.isoformat(),
-        profile_pic_url = user.profile_pic_url if hasattr(user, 'profile_pic_url') else None
+        profile_pic_url = user.profile_pic_url if hasattr(user, 'profile_pic_url') else None,
+        archetype = user.archetype if hasattr(user, 'archetype') else None
     )
 
 
@@ -291,6 +298,21 @@ def get_action_items(user_id: int, db: Session = Depends(get_db)):
         {"id": ai.id, "description": ai.description, "completed": ai.completed}
         for ai in user.action_items
     ]
+
+@app.post("/users/{user_id}/change_password")
+def change_password(user_id: int, data: ChangePasswordIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not pwd_context.verify(data.current_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    
+    user.password_hash = pwd_context.hash(data.new_password)
+    db.commit()
+    db.refresh(user)
+    return {"message": "Password updated successfully"}
+
 
 @app.post("/users/{user_id}/change_email/")
 def change_email(user_id: int, data: ChangeEmailIn, db: Session = Depends(get_db)):
@@ -422,6 +444,20 @@ def assign_peer(student_id: int, peer_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code = 404, detail = "Peer not found")
     if student_id == peer_id:
         raise HTTPException(status_code = 400, detail = "Cannot assign a user to be their own peer")
+    
+    if student.peerID and student.peerID != peer_id:
+        old_peer = db.query(User).filter(User.id == student.peerID).first()
+        if old_peer:
+            old_peer.peerID = None
+        student.peerID = None
+        db.flush()
+    
+    if peer.peerID and peer.peerID != student_id:
+        other_peer = db.query(User).filter(User.id == peer.peerID).first()
+        if other_peer:
+            other_peer.peerID = None
+        peer.peerID = None
+        db.flush()
     
     student.peerID = peer_id
     peer.peerID = student_id
@@ -577,3 +613,23 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
         "title": new_appointment.title,
         "scheduledAt": new_appointment.scheduledAt.isoformat()
     }
+
+@app.post("/users/{user_id}/set_archetype")
+def set_archetype(user_id: int, data: ArchetypeIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code = 404, detail = "User not found")
+    
+    user.archetype = data.archetype
+    db.commit()
+    db.refresh(user)
+    
+    return {"message": "Archetype updated successfully"}
+
+@app.get("/users/{user_id}/archetype")
+def get_archetype(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"user_id": user.id, "archetype": user.archetype}
