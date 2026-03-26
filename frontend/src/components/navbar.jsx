@@ -53,14 +53,14 @@ function Navbar() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "2.5rem" }}>
-            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", marginRight: "1.5rem", textDecoration: "none" }}>Ezamu</Link>
+            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", textDecoration: "none" }}>Ezamu</Link>
             <Link
               to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"}
-              style={{ color: isDashboard ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}
+              style={{ color: isDashboard ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}
             >
               Dashboard
             </Link>
-            <Link to="/appointments" style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
+            <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
             <Link to="/contactus" style={{ color: isContact ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
@@ -119,15 +119,15 @@ function Navbar() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "2.5rem" }}>
-            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", marginRight: "1.5rem", textDecoration: "none" }}>Ezamu</Link>
+            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", textDecoration: "none" }}>Ezamu</Link>
             {user ? (
               <>
-                <Link to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"} style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}>Dashboard</Link>
-                <Link to="/appointments" style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
+                <Link to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"} style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Dashboard</Link>
+                <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
               </>
             ) : (
               <>
-                <Link to="/assessment" style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}>Assessment</Link>
+                <Link to="/assessment" style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Assessment</Link>
                 <Link to="/contactus" style={{ color: isContact ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
               </>
             )}

@@ -161,11 +161,7 @@ export default function ProfilePage() {
 			<div style={{ width: "100%", maxWidth: 1200, display: "flex", gap: 32 }}>
 				{/* Left: Profile summary */}
 				{/* <div style={{ minWidth: 260, maxWidth: 320, flex: "0 0 300px", paddingRight: 32 }}>  and added section below this line */}
-				<div style={{
-					minWidth: 260,
-					maxWidth: 320,
-					flex: "0 0 300px",
-					}}>
+				<div style={{minWidth: 260, maxWidth: 320, flex: "0 0 300px"}}>
 					<div style={{
 						background: "#ffffff",
 						borderRadius: 16,
@@ -184,15 +180,15 @@ export default function ProfilePage() {
 							border: "4px solid #6b0f1f",
 							boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
 							marginBottom: 12
-							}}>
+						}}>
 							{profilePic ? (
 								<img src={profilePic} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
 							) : (
 								<div style={{ width: "100%", height: "100%", background: "#eee" }} />
 							)}
-							</div>
+					</div>
 						<button
-							style={{ color: "#fff", fontSize: 14, textDecoration: "underline", cursor: "pointer", background: "none", border: "none" }}
+							style={{ color: "#6b0f1f", fontSize: 14, textDecoration: "underline", cursor: "pointer", background: "none", border: "none" }}
 							onClick={() => setShowPicModal(true)}
 						>
 							Change Profile Picture
@@ -216,16 +212,16 @@ export default function ProfilePage() {
 									{picUploadMsg && <div style={{ color: "#b00", marginTop: 8 }}>{picUploadMsg}</div>}
 									<div style={{ marginTop: 18, display: "flex", gap: 16 }}>
 										<button onClick={handleConfirmProfilePicUpload} 
-										style={{
-											background: "#6b0f1f",
-											color: "#fff",
-											border: "none",
-											borderRadius: 10,
-											padding: "8px 18px",
-											fontWeight: 500,
-											cursor: "pointer",
-											transition: "0.2s",
-											}}>Confirm</button>
+											style={{
+												background: "#6b0f1f",
+												color: "#fff",
+												border: "none",
+												borderRadius: 10,
+												padding: "8px 18px",
+												fontWeight: 500,
+												cursor: "pointer",
+												transition: "0.2s",
+												}}>Confirm</button>
 										<button onClick={() => { setShowPicModal(false); setPicPreview(null); setSelectedPicFile(null); }} 
 										style={{
 											background: "#6b0f1f",
@@ -272,32 +268,32 @@ export default function ProfilePage() {
 						</label>
 
 						<input
-						id="new-email"
-						type="email"
-						value={newEmail}
-						onChange={(e) => setNewEmail(e.target.value)}
-						style={{
-							padding: "8px 12px",
-							borderRadius: 10,
-							border: "1px solid #ddd",
-							width: 220,
-							outline: "none",
-						}}
+							id="new-email"
+							type="email"
+							value={newEmail}
+							onChange={(e) => setNewEmail(e.target.value)}
+							style={{
+								padding: "8px 12px",
+								borderRadius: 10,
+								border: "1px solid #ddd",
+								width: 220,
+								outline: "none",
+							}}
 						/>
 
 						<button
-						type="submit"
-						style={{
-							background: "#6b0f1f",
-							color: "#fff",
-							border: "none",
-							borderRadius: 10,
-							padding: "8px 18px",
-							fontWeight: 500,
-							cursor: "pointer",
-						}}
-						>
-						Change
+							type="submit"
+							style={{
+								background: "#6b0f1f",
+								color: "#fff",
+								border: "none",
+								borderRadius: 10,
+								padding: "8px 18px",
+								fontWeight: 500,
+								cursor: "pointer",
+							}}
+							>
+							Change
 						</button>
 					</div>
 
@@ -318,17 +314,17 @@ export default function ProfilePage() {
 						</label>
 
 						<input
-						id="current-pw"
-						type="password"
-						value={currentPassword}
-						onChange={(e) => setCurrentPassword(e.target.value)}
-						style={{
-							padding: "8px 12px",
-							borderRadius: 10,
-							border: "1px solid #ddd",
-							width: 220,
-							outline: "none",
-						}}
+							id="current-pw"
+							type="password"
+							value={currentPassword}
+							onChange={(e) => setCurrentPassword(e.target.value)}
+							style={{
+								padding: "8px 12px",
+								borderRadius: 10,
+								border: "1px solid #ddd",
+								width: 220,
+								outline: "none",
+							}}
 						/>
 
 						<label htmlFor="new-pw" style={{ fontSize: 14 }}>
@@ -336,30 +332,30 @@ export default function ProfilePage() {
 						</label>
 
 						<input
-						id="new-pw"
-						type="password"
-						value={newPassword}
-						onChange={(e) => setNewPassword(e.target.value)}
-						style={{
-							padding: "8px 12px",
-							borderRadius: 10,
-							border: "1px solid #ddd",
-							width: 220,
-							outline: "none",
-						}}
+							id="new-pw"
+							type="password"
+							value={newPassword}
+							onChange={(e) => setNewPassword(e.target.value)}
+							style={{
+								padding: "8px 12px",
+								borderRadius: 10,
+								border: "1px solid #ddd",
+								width: 220,
+								outline: "none",
+							}}
 						/>
 
 						<button
-						type="submit"
-						style={{
-							background: "#6b0f1f",
-							color: "#fff",
-							border: "none",
-							borderRadius: 10,
-							padding: "8px 18px",
-							fontWeight: 500,
-							cursor: "pointer",
-						}}
+							type="submit"
+							style={{
+								background: "#6b0f1f",
+								color: "#fff",
+								border: "none",
+								borderRadius: 10,
+								padding: "8px 18px",
+								fontWeight: 500,
+								cursor: "pointer",
+							}}
 						>
 						Change
 						</button>

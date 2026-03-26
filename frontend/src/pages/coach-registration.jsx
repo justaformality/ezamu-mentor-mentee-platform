@@ -1,0 +1,1 @@
+//to do, this should be the landing page right after coaches sign up, where they can fill in info such as a bio/age/profession for students to look at later

@@ -264,6 +264,25 @@ def signup_alias(user_in: RegisterIn, db: Session = Depends(get_db)):
 def login_alias(user_in: LoginIn, db: Session = Depends(get_db)):
     return login(user_in, db)
 
+# list of coaches
+@app.get("/api/coaches")
+def get_coaches(db: Session = Depends(get_db)):
+    coaches = db.query(User).filter(User.role == "coach").all()
+    result = []
+    for coach in coaches:
+        # If the path is already absolute (starts with /static/), use as is; otherwise, prepend
+        if coach.profile_pic_url and coach.profile_pic_url.startswith("/static/"):
+            profile_pic_url = coach.profile_pic_url
+        else:
+            profile_pic_url = None
+        result.append({
+            "id": coach.id,
+            "name": coach.fullName or coach.email,
+            "description": coach.archetype or "Coach at EZAMU platform",
+            "profile_pic_url": profile_pic_url
+        })
+    return result
+
 @app.get("/users/{user_id}/appointments")
 def get_appointments(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
