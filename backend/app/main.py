@@ -13,13 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
-<<<<<<< HEAD
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean, Table
-=======
 from fastapi.staticfiles import StaticFiles
-
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean
->>>>>>> 4db6ebefeeffb4d84a5a6bd89e1b6c407caa79a3
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -46,7 +41,7 @@ class User(Base):
     parentID = Column(Integer, ForeignKey("users.id"), nullable = True)
     peerID = Column(Integer, ForeignKey("users.id"), nullable = True)
 
-    coach = relationship("User", remote_side=[id], foreign_keys=[coachID], backref="coached_students")
+    coach = relationship("User", remote_side=[id], foreign_keys=[coachID], backref="students")
     parent = relationship("User", remote_side=[id], foreign_keys=[parentID], backref="children")
     peer = relationship("User", remote_side=[id], foreign_keys=[peerID], backref="peers")
     action_items = relationship("ActionItem", back_populates="user")
@@ -352,7 +347,7 @@ def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
             "fullName": student.fullName,
             "createdAt": student.createdAt.isoformat()
         }
-        for student in coach.coached_students
+        for student in coach.students
     ]
 
 @app.get("/parents/{parent_id}/students")
