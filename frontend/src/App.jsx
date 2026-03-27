@@ -4,6 +4,8 @@ import Navbar from "./components/navbar.jsx";
 
 import LandingPage from "./pages/landing-page.jsx";
 import SignUpPage from "./pages/signup.jsx";
+import StudentRegistration from "./pages/student-registration.jsx";
+import CoachRegistration from "./pages/coach-registration.jsx";
 import SignInPage from "./pages/signin.jsx";
 import Dashboard from "./pages/dashboard.jsx";
 import StudentDashboard from "./pages/student-dashboard.jsx";
@@ -25,6 +27,8 @@ function App() {
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
+        <Route path="/student-registration" element={<StudentRegistration />} />
+        <Route path="/coach-registration" element={<CoachRegistration />} />
         <Route path="/coach-dashboard" element={<CoachDashboard />} />
         <Route path="/assessment" element={<Assessment />} />
         <Route path="/appointments" element={<AppointmentPage />} />

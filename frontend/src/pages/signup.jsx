@@ -61,8 +61,10 @@ function SignUpPage() {
         // Force reload to update navbar state
         setTimeout(() => {
           if (userObj.role === "student") {
-            window.location.href = "/student-dashboard";
-          } else if (userObj.role === "coach" || userObj.role === "parent") {
+            window.location.href = "/student-registration";
+          } else if (userObj.role === "coach") {
+            window.location.href = "/coach-registration";
+          } else if (userObj.role === "parent") {
             window.location.href = "/coach-dashboard";
           }
         }, 500);
