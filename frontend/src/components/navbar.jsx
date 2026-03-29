@@ -33,7 +33,7 @@ function Navbar() {
       <nav
         style={{
           width: "100%",
-          borderBottom: "4px solid #6b0f1f",
+          borderBottom: "4px solid #1c2740",
           background: "#fff",
           minHeight: "4.5rem",
           padding: "1.25rem 0 1rem 0",
@@ -53,21 +53,21 @@ function Navbar() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "2.5rem" }}>
-            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", textDecoration: "none" }}>Ezamu</Link>
+            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#1c2740", textDecoration: "none" }}>Ezamu</Link>
             <Link
               to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"}
-              style={{ color: isDashboard ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}
+              style={{ color: isDashboard ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}
             >
               Dashboard
             </Link>
-            <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
-            <Link to="/contactus" style={{ color: isContact ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
+            <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
+            <Link to="/contactus" style={{ color: isContact ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
             <Link
               to="/profile"
               style={{
-                color: pathname === "/profile" ? "#e48b8b" : "#6b0f1f",
+                color: pathname === "/profile" ? "#add8e6" : "#1c2740",
                 textDecoration: "none",
                 fontSize: "0.97rem"
               }}
@@ -79,7 +79,7 @@ function Navbar() {
               style={{
                 background: "none",
                 border: "none",
-                color: "#6b0f1f",
+                color: "#1c2740",
                 fontSize: "0.97rem",
                 cursor: "pointer",
                 marginLeft: "0.5rem"
@@ -99,7 +99,7 @@ function Navbar() {
       <nav
         style={{
           width: "100%",
-          borderBottom: "4px solid #6b0f1f",
+          borderBottom: "4px solid #1c2740",
           background: "#fff",
           minHeight: "4.5rem",
           padding: "1.25rem 0 1rem 0",
@@ -119,16 +119,16 @@ function Navbar() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "2.5rem" }}>
-            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", textDecoration: "none" }}>Ezamu</Link>
+            <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#1c2740", textDecoration: "none" }}>Ezamu</Link>
             {user ? (
               <>
-                <Link to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"} style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Dashboard</Link>
-                <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
+                <Link to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"} style={{ color: "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Dashboard</Link>
+                <Link to="/appointments" style={{ color: pathname === "/appointments" ? "add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
               </>
             ) : (
               <>
-                <Link to="/assessment" style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Assessment</Link>
-                <Link to="/contactus" style={{ color: isContact ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
+                <Link to="/assessment" style={{ color: "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Assessment</Link>
+                <Link to="/contactus" style={{ color: isContact ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
               </>
             )}
           </div>
@@ -138,7 +138,7 @@ function Navbar() {
                 <Link
                   to="/profile"
                   style={{
-                    color: pathname === "/profile" ? "#e48b8b" : "#6b0f1f",
+                    color: pathname === "/profile" ? "#add8e6" : "#1c2740",
                     textDecoration: "none",
                     fontSize: "0.97rem"
                   }}
@@ -150,7 +150,7 @@ function Navbar() {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#6b0f1f",
+                    color: "#1c2740",
                     fontSize: "0.97rem",
                     cursor: "pointer",
                     marginLeft: "0.5rem"
@@ -161,8 +161,8 @@ function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/signin" style={{ color: pathname === "/signin" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Sign In</Link>
-                <Link to="/signup" style={{ color: pathname === "/signup" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Sign Up</Link>
+                <Link to="/signin" style={{ color: pathname === "/signin" ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Sign In</Link>
+                <Link to="/signup" style={{ color: pathname === "/signup" ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Sign Up</Link>
               </>
             )}
           </div>
@@ -176,7 +176,7 @@ function Navbar() {
     <nav
       style={{
         width: "100%",
-        borderBottom: "4px solid #6b0f1f",
+        borderBottom: "4px solid #1c2740",
         background: "#fff",
         minHeight: "4.5rem",
         padding: "1.25rem 0 1rem 0",
@@ -196,21 +196,21 @@ function Navbar() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "2.5rem" }}>
-          <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#6b0f1f", marginRight: "1.5rem", textDecoration: "none" }}>Ezamu</Link>
+          <Link to="/" style={{ fontWeight: 700, fontSize: "1.3rem", color: "#1c2740", marginRight: "1.5rem", textDecoration: "none" }}>Ezamu</Link>
           {user ? (
             <>
               <Link
                 to={user && (user.role === "coach" || user.role === "mentor") ? "/coach-dashboard" : "/student-dashboard"}
-                style={{ color: ["/student-dashboard","/coach-dashboard"].includes(pathname) ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}
+                style={{ color: ["/student-dashboard","/coach-dashboard"].includes(pathname) ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}
               >
                 Dashboard
               </Link>
-              <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
+              <Link to="/appointments" style={{ color: pathname === "/appointments" ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Appointments</Link>
             </>
           ) : (
             <>
-              <Link to="/assessment" style={{ color: "#6b0f1f", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}>Assessment</Link>
-              <Link to="/contactus" style={{ color: isContact ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
+              <Link to="/assessment" style={{ color: "#1c2740", textDecoration: "none", fontSize: "0.97rem", marginRight: "1.5rem" }}>Assessment</Link>
+              <Link to="/contactus" style={{ color: isContact ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Contact Us</Link>
             </>
           )}
         </div>
@@ -220,7 +220,7 @@ function Navbar() {
               <Link
                 to="/profile"
                 style={{
-                  color: pathname === "/profile" ? "#e48b8b" : "#6b0f1f",
+                  color: pathname === "/profile" ? "#add8e6" : "#1c2740",
                   textDecoration: "none",
                   fontSize: "0.97rem"
                 }}
@@ -232,7 +232,7 @@ function Navbar() {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#6b0f1f",
+                  color: "#1c2740",
                   fontSize: "0.97rem",
                   cursor: "pointer",
                   marginLeft: "0.5rem"
@@ -243,8 +243,8 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/signin" style={{ color: pathname === "/signin" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Sign In</Link>
-              <Link to="/signup" style={{ color: pathname === "/signup" ? "#e48b8b" : "#6b0f1f", textDecoration: "none", fontSize: "0.97rem" }}>Sign Up</Link>
+              <Link to="/signin" style={{ color: pathname === "/signin" ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Sign In</Link>
+              <Link to="/signup" style={{ color: pathname === "/signup" ? "#add8e6" : "#1c2740", textDecoration: "none", fontSize: "0.97rem" }}>Sign Up</Link>
             </>
           )}
         </div>

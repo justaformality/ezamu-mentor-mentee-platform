@@ -178,7 +178,7 @@ export default function ProfilePage() {
 			style={{
 				width: "100%",
 				minHeight: "100vh",
-				background: "linear-gradient(180deg, #6f121f 0%, #991f2f 45%, #f8e1de 100%)",
+				background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
 				color: "#fff",
 				display: "flex",
 				justifyContent: "center",
@@ -197,7 +197,7 @@ export default function ProfilePage() {
 						boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
 						color: "#333"
 					}}>
-					<div style={{ fontSize: 22, fontWeight: 600, marginBottom: 16, color: "#6b0f1f" }}>My Profile</div> 
+					<div style={{ fontSize: 22, fontWeight: 600, marginBottom: 16, color: "#1c2740" }}>My Profile</div> 
 					{/* made a change in the line above and section below*/}
 					<div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 }}>
 						<div style={{
@@ -205,7 +205,7 @@ export default function ProfilePage() {
 							height: 100,
 							borderRadius: "50%",
 							overflow: "hidden",
-							border: "4px solid #6b0f1f",
+							border: "4px solid #1c2740",
 							boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
 							marginBottom: 12
 						}}>
@@ -216,7 +216,7 @@ export default function ProfilePage() {
 							)}
 					</div>
 						<button
-							style={{ color: "#6b0f1f", fontSize: 14, textDecoration: "underline", cursor: "pointer", background: "none", border: "none" }}
+							style={{ color: "#1c2740", fontSize: 14, textDecoration: "underline", cursor: "pointer", background: "none", border: "none" }}
 							onClick={() => setShowPicModal(true)}
 						>
 							Change Profile Picture
@@ -227,7 +227,7 @@ export default function ProfilePage() {
 								display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
 							}}>
 								<div style={{ background: "#fff", padding: 32, borderRadius: 12, minWidth: 320, boxShadow: "0 8px 32px #0003" }}>
-									<h3 style={{ color: "#6b0f1f", marginBottom: 16 }}>Upload Profile Picture</h3>
+									<h3 style={{ color: "#1c2740", marginBottom: 16 }}>Upload Profile Picture</h3>
 									<input type="file" accept="image/png" onChange={handleProfilePicChange} />
 									{picPreview && (
 										<div style={{ marginTop: 12, display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
 									<div style={{ marginTop: 18, display: "flex", gap: 16 }}>
 										<button onClick={handleConfirmProfilePicUpload} 
 											style={{
-												background: "#6b0f1f",
+												background: "#1c2740",
 												color: "#fff",
 												border: "none",
 												borderRadius: 10,
@@ -252,7 +252,7 @@ export default function ProfilePage() {
 												}}>Confirm</button>
 										<button onClick={() => { setShowPicModal(false); setPicPreview(null); setSelectedPicFile(null); }} 
 										style={{
-											background: "#6b0f1f",
+											background: "#1c2740",
 											color: "#fff",
 											border: "none",
 											borderRadius: 10,
@@ -312,7 +312,7 @@ export default function ProfilePage() {
 						<button
 							type="submit"
 							style={{
-								background: "#6b0f1f",
+								background: "#1c2740",
 								color: "#fff",
 								border: "none",
 								borderRadius: 10,
@@ -376,7 +376,7 @@ export default function ProfilePage() {
 						<button
 							type="submit"
 							style={{
-								background: "#6b0f1f",
+								background: "#1c2740",
 								color: "#fff",
 								border: "none",
 								borderRadius: 10,

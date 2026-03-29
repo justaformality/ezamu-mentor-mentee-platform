@@ -7,7 +7,7 @@ function LandingPage() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #6f121f 0%, #991f2f 45%, #f8e1de 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
         color: "#2d1520",
         display: "flex",
         justifyContent: "center",
@@ -44,7 +44,7 @@ function LandingPage() {
                   padding: "0.85rem 1.8rem",
                   borderRadius: "999px",
                   border: "none",
-                  backgroundColor: "#800d1a",
+                  backgroundColor: "#1c2740",
                   color: "#fff",
                   textDecoration: "none",
                   fontWeight: 700,
@@ -200,7 +200,7 @@ function LandingPage() {
             textAlign: "center",
             padding: "2rem",
             borderRadius: "1rem",
-            background: "#800d1a",
+            background: "#1c2740",
             border: "1px solid rgba(255,255,255,0.45)",
           }}
         >
@@ -212,7 +212,7 @@ function LandingPage() {
             style={{
               display: "inline-block",
               backgroundColor: "#fff",
-              color: "#800d1a",
+              color: "#1c2740",
               padding: "0.85rem 1.8rem",
               borderRadius: "999px",
               textDecoration: "none",

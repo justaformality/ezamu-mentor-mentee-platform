@@ -6,7 +6,7 @@ export default function ContactUs() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #7b232c 0%, #e9b6b6 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",

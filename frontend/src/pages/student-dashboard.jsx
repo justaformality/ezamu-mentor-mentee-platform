@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-//adding stuff under this!
 
 const formatDateBadge = (dateStr) => {
   const date = new Date(dateStr);
@@ -8,8 +7,6 @@ const formatDateBadge = (dateStr) => {
     month: date.toLocaleString("default", {month: "short"}),
   };
 };
-
-//added stuff above this!
 
 function StudentDashboard() {
   const [completedItems, setCompletedItems] = useState({});
@@ -187,7 +184,7 @@ function StudentDashboard() {
         display: "flex",
         justifyContent: "center",
         padding: "1.5rem 1rem 2.5rem",
-        background: "linear-gradient(180deg, #6b0f1f 0%, #9b2838 40%, #f8d5d8 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
       }}
     >
       <div style={{ maxWidth: "1200px", width: "100%" }}>
@@ -322,7 +319,7 @@ function StudentDashboard() {
                     backgroundColor: "#fff",
                     padding: "1rem",
                     borderRadius: "6px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                   }}
                 >
                   <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
@@ -405,7 +402,7 @@ function StudentDashboard() {
                     alignItems: "center",
                   }}
                 >
-                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#7f1d28" }}>S.M.A.R.T. Goals</h3>
+                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>S.M.A.R.T. Goals</h3>
                   <p style={{ margin: "0.5rem 0 0", color: "#666" }}>View your goal strategy and progress</p>
                 </div>
               </a>
@@ -431,7 +428,7 @@ function StudentDashboard() {
                     alignItems: "center",
                   }}
                 >
-                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#7f1d28" }}>Your Team</h3>
+                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>Your Team</h3>
                   <p style={{ margin: "0.5rem 0 0", color: "#666" }}>Meet your mentors and collaborators</p>
                 </div>
               </a>
