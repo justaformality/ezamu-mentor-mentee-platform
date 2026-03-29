@@ -132,17 +132,45 @@ export default function ProfilePage() {
 
 	// Change password handler
 	async function handlePasswordChange(e) {
-		e.preventDefault();
-		setPwMsg("");
-		if (!currentPassword || !newPassword) return setPwMsg("Fill both fields.");
-		try {
-			// No backend endpoint for password change, so just fake success for demo
-			setPwMsg("Password changed! (Demo only)");
-			setCurrentPassword("");
-			setNewPassword("");
-		} catch (err) {
-			setPwMsg("Error changing password.");
+	e.preventDefault();
+	setPwMsg("");
+
+	if (!currentPassword || !newPassword) {
+		return setPwMsg("Fill both fields.");
+	}
+
+	if (!user?.id) {
+		return setPwMsg("User not loaded.");
+	}
+
+	try {
+		const res = await fetch(`${API_BASE}/users/${user.id}/change_password`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			current_password: currentPassword,
+			new_password: newPassword,
+		}),
+		});
+
+		const data = await res.json();
+
+		if (!res.ok) {
+		setPwMsg(data.detail || "Failed to change password.");
+		return;
 		}
+
+		setPwMsg("Password changed! Please sign in again.");
+		localStorage.removeItem("user");
+
+		setTimeout(() => {
+		window.location.href = "/signin";
+		}, 1200);
+	} catch (err) {
+		setPwMsg("Error changing password.");
+	}
 	}
 
 	return (
