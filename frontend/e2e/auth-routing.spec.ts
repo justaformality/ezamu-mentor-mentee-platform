@@ -1,13 +1,5 @@
 /*
-
-
-Update log:
-Last updated        | Version of main.py tested      | Test cases passed      | OS        | Errors noted
----------------------------------------------------------------------------------------------------------
-Mar 2 @ 438pm       | Mar 2, Commit 5d07e49          | 0/2                    | Windows   | No POST /auth/login request sent by frontend 
-                                                                                            (everything done client-side)
-Mar 16 @ 5:05pm     | Mar 2, Commit 5d07e49          | 1/2                    | Windows   | Password check passes, wrong redirect for coaches
-
+auth-routing.spec.ts
 
 To run:
 
@@ -21,113 +13,217 @@ To run:
 
 */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
-function uniqueEmail(prefix: string) {
-  const id = Date.now().toString() + "-" + Math.random().toString(16).slice(2);
-  return `${prefix}-${id}@example.com`;
-}
+const BASE = 'http://localhost:5173';
 
-async function hardLogout(page: any) {
-  // Reliable "logout" even if UI button isn't present
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.context().clearCookies();
-}
+test.describe('Full Auth + Profile Flow', () => {
 
-async function expectAuthLoginRequest(page: any, timeoutMs = 5000) {
-  try {
-    await page.waitForRequest(
-      (req: any) => req.method() === "POST" && req.url().includes("/auth/login"),
-      { timeout: timeoutMs }
-    );
-  } catch {
-    throw new Error(
-      "No POST /auth/login request was sent by the frontend. " +
-        "This means the UI is not using the backend for login (client-side navigation)."
-    );
-  }
-}
+  test('signup -> login -> redirect works', async ({ page }) => {
+    const email = `user_${Date.now()}@test.com`;
+    const password = 'test1234';
 
-test("Case 1: coach relogin should land on coach dashboard (not student)", async ({ page }) => {
-  const email = uniqueEmail("coach");
-  const password = "pass1234";
+    await page.goto(`${BASE}/signup`);
 
-  // Sign up (coach-equivalent role in your UI is 'mentor')
-  await page.goto("/signup");
-  await page.fill('input[name="fullName"]', "Playwright Coach");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', password);
+    await page.fill('input[name="fullName"]', 'Test User');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
+    await page.selectOption('select[name="role"]', 'student');
 
-  // IMPORTANT: in your UI, the 'coach/counselor' option value is "mentor"
-  await page.selectOption('select[name="role"]', "mentor");
+    await page.click('button:has-text("Sign Up")');
 
-  await page.click('button[type="submit"]');
+    await page.waitForURL(/student-registration/);
 
-  // Your signup page routes mentor -> /coach-dashboard
-  await expect(page).toHaveURL(/\/coach-dashboard$/);
+    await page.goto(`${BASE}/signin`);
 
-  // Logout (robust)
-  await hardLogout(page);
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
 
-  // Re-login
-  await page.goto("/signin");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', password);
+    await page.click('button:has-text("Sign In")');
 
-  // Clicking Sign In should trigger a backend login call; currently it doesn't.
-  const clickPromise = page.click('button[type="submit"]');
-  await Promise.all([clickPromise]);
-
-  // // Assert frontend actually calls backend for login
-  // await expectAuthLoginRequest(page);
-
-  // Expected behavior: coach goes to coach dashboard
-  await expect(page).toHaveURL(/\/coach-dashboard$/);
-
-  // Explicit fail condition:
-  await expect(page).not.toHaveURL(/\/student-dashboard$/);
-});
-
-test("Case 2: wrong password must not log in", async ({ page }) => {
-  const email = uniqueEmail("student");
-  const password = "pass1234";
-  const wrongPassword = "abc123";
-
-  // Sign up as student
-  await page.goto("/signup");
-  await page.fill('input[name="fullName"]', "Playwright Student");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', password);
-  await page.selectOption('select[name="role"]', "student");
-  await page.click('button[type="submit"]');
-
-  await expect(page).toHaveURL(/\/student-dashboard$/);
-
-  // Logout (robust)
-  await hardLogout(page);
-
-  // Attempt login with wrong password
-  await page.goto("/signin");
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', wrongPassword);
-  await page.click('button[type="submit"]');
-
-  // Handle alert popup
-  let dialogMessage = "";
-  page.once("dialog", async (dialog) => {
-    dialogMessage = dialog.message();
-    await dialog.accept();
+    await expect(page).toHaveURL(/student-dashboard/);
   });
 
-  // Confirm the alert was the expected one
-  await expect.poll(() => dialogMessage).toContain("Invalid email or password");
+  test('wrong password is rejected', async ({ page }) => {
+    const email = `user_${Date.now()}@test.com`;
+    const password = 'test1234';
 
-  // Confirm user did NOT log in
-  await expect(page).toHaveURL(/\/signin$/);
-  await expect(page).not.toHaveURL(/\/student-dashboard$/);
-  await expect(page).not.toHaveURL(/\/coach-dashboard$/);
+    await page.goto(`${BASE}/signup`);
+
+    await page.fill('input[name="fullName"]', 'Test User');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
+
+    await page.click('button:has-text("Sign Up")');
+
+    await page.goto(`${BASE}/signin`);
+
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', 'wrong');
+
+    await page.click('button:has-text("Sign In")');
+
+    // Handle alert popup
+    let dialogMessage = "";
+    page.once("dialog", async (dialog) => {
+      dialogMessage = dialog.message();
+      await dialog.accept();
+    });
+
+    // Confirm the alert was the expected one
+    await expect.poll(() => dialogMessage).toContain("Invalid email or password");
+
+    // Confirm user did NOT log in
+    await expect(page).toHaveURL(/\/signin$/);
+    await expect(page).not.toHaveURL(/\/student-dashboard$/);
+    await expect(page).not.toHaveURL(/\/coach-dashboard$/);
+  });
+
+  test('coach routing works', async ({ page }) => {
+    const email = `coach_${Date.now()}@test.com`;
+    const password = 'test1234';
+
+    await page.goto(`${BASE}/signup`);
+
+    await page.fill('input[name="fullName"]', 'Coach User');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
+    await page.selectOption('select[name="role"]', 'coach');
+
+    await page.click('button:has-text("Sign Up")');
+
+    await page.waitForURL(/coach-registration/);
+
+    await page.goto(`${BASE}/signin`);
+
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+
+    await page.click('button:has-text("Sign In")');
+
+    await expect(page).toHaveURL(/coach-dashboard/);
+  });
+
+  test('change email works', async ({ page }) => {
+    const email = `user_${Date.now()}@test.com`;
+    const newEmail = `new_${Date.now()}@test.com`;
+    const password = 'test1234';
+
+    await page.goto(`${BASE}/signup`);
+
+    await page.fill('input[name="fullName"]', 'Test User');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
+    await page.selectOption('select[name="role"]', 'student');
+
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.waitForURL(/student-registration/);
+
+    await page.goto(`${BASE}/profile`);
+
+    await page.fill('#new-email', newEmail);
+    await page
+      .locator('form')
+      .filter({ has: page.locator('#new-email') })
+      .getByRole('button', { name: 'Change' })
+      .click();
+
+    await expect(page.locator('text=/Email changed/i')).toBeVisible();
+    await page.waitForURL(/signin/, { timeout: 4000 });
+
+    await page.fill('input[name="email"]', newEmail);
+    await page.fill('input[name="password"]', password);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    await expect(page).toHaveURL(/student-dashboard/);
+  });
+
+  test('change password works', async ({ page }) => {
+    const email = `user_${Date.now()}@test.com`;
+    const password = 'test1234';
+    const newPassword = 'newpass1234';
+
+    await page.goto(`${BASE}/signup`);
+
+    await page.fill('input[name="fullName"]', 'Test User');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
+    await page.selectOption('select[name="role"]', 'student');
+
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.waitForURL(/student-registration/);
+
+    await page.goto(`${BASE}/profile`);
+
+    await page.fill('#current-pw', password);
+    await page.fill('#new-pw', newPassword);
+    await page
+      .locator('form')
+      .filter({ has: page.locator('#current-pw') })
+      .getByRole('button', { name: 'Change' })
+      .click();
+
+    await expect(page.locator('text=/Password changed|Password updated/i')).toBeVisible();
+    await page.waitForURL(/signin/, { timeout: 4000 });
+
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', newPassword);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    await expect(page).toHaveURL(/student-dashboard/);
+  });
+
+  test('profile picture upload works', async ({ page }) => {
+    const email = `user_${Date.now()}@test.com`;
+    const password = 'test1234';
+
+    await page.goto(`${BASE}/signup`);
+
+    await page.fill('input[name="fullName"]', 'Test User');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
+    await page.selectOption('select[name="role"]', 'student');
+
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+
+    // signup currently sends students here first
+    await page.waitForURL(/student-registration/);
+
+    // then continue to the proper dashboard
+    await page.goto(`${BASE}/student-dashboard`);
+    await expect(page).toHaveURL(/student-dashboard/);
+
+    // now go to profile
+    await page.goto(`${BASE}/profile`);
+
+    await page.getByRole('button', { name: 'Change Profile Picture' }).click();
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles('e2e/test.png');
+
+    await page.getByRole('button', { name: 'Confirm' }).click();
+
+    // verify localStorage got updated
+    await expect.poll(async () => {
+      return await page.evaluate(() => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        return user.profile_pic_url || '';
+      });
+    }).not.toBe('');
+
+    // verify the image element is showing something
+    const profileImg = page.locator('img[alt="Profile"]');
+    await expect(profileImg).toBeVisible();
+
+    await expect.poll(async () => {
+      return await profileImg.getAttribute('src');
+    }).not.toBeNull();
+  });
 
 });
