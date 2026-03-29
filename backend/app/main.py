@@ -17,6 +17,8 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, T
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
+from pydantic import Field
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL environment variable is not set")
@@ -25,6 +27,8 @@ if not DATABASE_URL:
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
+
+DEMO_ALL_STUDENTS_FOR_COACH = True
 
 class User(Base):
     __tablename__ = "users"
@@ -46,6 +50,10 @@ class User(Base):
     parent = relationship("User", remote_side=[id], foreign_keys=[parentID], backref="children")
     peer = relationship("User", remote_side=[id], foreign_keys=[peerID], backref="peers")
     action_items = relationship("ActionItem", back_populates="user")
+
+    student_bio = Column(String, nullable=True)
+    student_goals_json = Column(String, nullable=True)   # store list as JSON string
+    student_age = Column(String, nullable=True)
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -121,6 +129,27 @@ class ParentInviteOut(BaseModel):
 
 class PeerAssignRequest(BaseModel):
     actor_id: int
+
+class StudentProfileIn(BaseModel):
+    age: Optional[str] = None
+    bio: Optional[str] = None
+    goals: List[str] = Field(default_factory=list)
+
+class StudentProfileOut(BaseModel):
+    user_id: int
+    fullName: Optional[str] = None
+    age: Optional[str] = None
+    bio: Optional[str] = None
+    goals: List[str] = Field(default_factory=list)
+
+class CoachStudentDetailOut(BaseModel):
+    id: int
+    fullName: Optional[str] = None
+    email: EmailStr
+    age: Optional[str] = None
+    bio: Optional[str] = None
+    goals: List[str] = Field(default_factory=list)
+    action_items: List[Dict[str, Any]]
 
 Base.metadata.create_all(bind=engine)
 
@@ -440,8 +469,13 @@ def upload_profile_pic(user_id: int, file: UploadFile = File(...), db: Session =
 def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
     coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
     if not coach:
-        raise HTTPException(status_code = 404, detail = "Coach not found")
-    
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    if DEMO_ALL_STUDENTS_FOR_COACH:
+        students = db.query(User).filter(User.role == "student").all()
+    else:
+        students = coach.students
+
     return [
         {
             "id": student.id,
@@ -449,7 +483,7 @@ def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
             "fullName": student.fullName,
             "createdAt": student.createdAt.isoformat()
         }
-        for student in coach.students
+        for student in students
     ]
 
 @app.get("/parents/{parent_id}/students")
@@ -868,15 +902,56 @@ def list_assessment_responses(student_id: int, db: Session = Depends(get_db)):
         for row in responses
     ]
 
+@app.post("/students/{student_id}/profile", response_model=StudentProfileOut)
+def save_student_profile(student_id: int, data: StudentProfileIn, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    student.student_age = data.age
+    student.student_bio = data.bio
+    student.student_goals_json = json.dumps(data.goals)
+
+    db.commit()
+    db.refresh(student)
+
+    return StudentProfileOut(
+        user_id=student.id,
+        fullName=student.fullName,
+        age=student.student_age,
+        bio=student.student_bio,
+        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+    )
+
+@app.get("/students/{student_id}/profile", response_model=StudentProfileOut)
+def get_student_profile(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    return StudentProfileOut(
+        user_id=student.id,
+        fullName=student.fullName,
+        age=student.student_age,
+        bio=student.student_bio,
+        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+    )
+
 @app.get("/coaches/{coach_id}/students/{student_id}/action_items")
 def get_student_action_items(coach_id: int, student_id: int, db: Session = Depends(get_db)):
     coach = db.query(User).filter(User.id == coach_id, User.role =="coach").first()
-    student = db.query(User).filter(User.id == student_id, User.coachID == coach_id).first()
     if not coach:
         raise HTTPException(status_code = 404, detail = "Coach not found")
-    if not student:
-        raise HTTPException(status_code = 403, detail = "Student is not assigned to this coach")
-    
+
+    if DEMO_ALL_STUDENTS_FOR_COACH:
+        student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+    else:
+        student = db.query(User).filter(User.id == student_id, User.coachID == coach_id).first()
+        if not student:
+            raise HTTPException(status_code = 403, detail = "Student is not assigned to this coach")
+
     return [
         {
             "id": ai.id,
@@ -885,6 +960,45 @@ def get_student_action_items(coach_id: int, student_id: int, db: Session = Depen
         }
         for ai in student.action_items
     ]
+
+@app.get("/coaches/{coach_id}/students/{student_id}", response_model=CoachStudentDetailOut)
+def get_coach_student_detail(coach_id: int, student_id: int, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    if DEMO_ALL_STUDENTS_FOR_COACH:
+        student = db.query(User).filter(
+            User.id == student_id,
+            User.role == "student"
+        ).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+    else:
+        student = db.query(User).filter(
+            User.id == student_id,
+            User.role == "student",
+            User.coachID == coach_id
+        ).first()
+        if not student:
+            raise HTTPException(status_code=403, detail="Student is not assigned to this coach")
+
+    return CoachStudentDetailOut(
+        id=student.id,
+        fullName=student.fullName,
+        email=student.email,
+        age=student.student_age,
+        bio=student.student_bio,
+        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+        action_items=[
+            {
+                "id": ai.id,
+                "description": ai.description,
+                "completed": ai.completed,
+            }
+            for ai in student.action_items
+        ],
+    )
 
 @app.post("/coaches/{coach_id}/availability", response_model = AvailabilityOut)
 def add_availability(coach_id: int, slot: AvailabilityIn, db: Session = Depends(get_db)):
