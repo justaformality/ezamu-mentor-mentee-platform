@@ -51,21 +51,20 @@ function SignUpPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store user data in localStorage and set on window for immediate navbar update
-        const userData = {
-          email: form.email,
-          role: form.role,
-        };
-        localStorage.setItem("user", JSON.stringify(userData));
-        window.user = userData;
-
+        // Store the full user object returned from the backend
+        // If your backend returns { user: {...} }, use data.user; otherwise, use data directly
+        const userObj = data.user || data;
+        localStorage.setItem("user", JSON.stringify(userObj));
+        window.user = userObj;
         setMessage("Sign up successful! Redirecting...");
 
         // Force reload to update navbar state
         setTimeout(() => {
-          if (form.role === "student") {
-            window.location.href = "/student-dashboard";
-          } else if (form.role === "coach" || form.role === "mentor") {
+          if (userObj.role === "student") {
+            window.location.href = "/student-registration";
+          } else if (userObj.role === "coach") {
+            window.location.href = "/coach-registration";
+          } else if (userObj.role === "parent") {
             window.location.href = "/coach-dashboard";
           }
         }, 500);
@@ -107,7 +106,7 @@ function SignUpPage() {
           Create an Account
         </h1>
         <p style={{ marginBottom: "1.25rem", textAlign: "center", color: "#5f1f2c" }}>
-          Sign up as a student, mentor, or counselor.
+          Sign up as a student, parent, or coach.
         </p>
 
         <form
@@ -216,8 +215,8 @@ function SignUpPage() {
               }}
           >
             <option value="student">Student</option>
-            <option value="mentor">Career Coach/Counselor</option>
-            <option value="counselor">Mentor</option>
+            <option value="parent">Parent</option>
+            <option value="coach">Coach</option>
           </select>
         </label>
 

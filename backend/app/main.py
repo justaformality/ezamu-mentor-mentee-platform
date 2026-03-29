@@ -13,9 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean, Table
 from fastapi.staticfiles import StaticFiles
-
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -37,10 +36,15 @@ class User(Base):
     fullName = Column(String, default = "")
     createdAt = Column(DateTime, default=datetime.now(timezone.utc))
     profile_pic_url = Column(String, nullable=True)  # URL or path to profile picture
+    archetype = Column(String, nullable=True)
 
     coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
+    parentID = Column(Integer, ForeignKey("users.id"), nullable = True)
+    peerID = Column(Integer, ForeignKey("users.id"), nullable = True)
 
-    coach = relationship("User", remote_side=[id], backref="students")
+    coach = relationship("User", remote_side=[id], foreign_keys=[coachID], backref="students")
+    parent = relationship("User", remote_side=[id], foreign_keys=[parentID], backref="children")
+    peer = relationship("User", remote_side=[id], foreign_keys=[peerID], backref="peers")
     action_items = relationship("ActionItem", back_populates="user")
 
 class Appointment(Base):
@@ -102,17 +106,15 @@ def _map_role(payload: Dict[str, Any]) -> str:
     role = str(role).strip().lower()
 
     # Normalize common variants
-    # user -> student (matches your existing backend naming)
     if role in {"user", "student"}:
         return "student"
     if role in {"coach"}:
         return "coach"
     if role in {"admin"}:
         return "admin"
-    if role in {"mentor"}:
-        return "mentor"
+    if role in {"parent"}:
+        return "parent"
 
-    # If unknown, still store it (but this keeps your data consistent)
     return "student"
 
 
@@ -127,21 +129,20 @@ def _map_full_name(payload: Dict[str, Any]) -> str:
 
 
 class RegisterIn(BaseModel):
-    # Keep strict for email/pass; other fields are optional
     email: EmailStr
     password: str = Field(min_length=4)
-
-    # Optional fields that your frontend might send
     fullName: Optional[str] = None
     role: Optional[str] = None
-    accountType: Optional[str] = None
-    account_type: Optional[str] = None
-    full_name: Optional[str] = None
 
 
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=4)
 
 
 class UserOut(BaseModel):
@@ -151,6 +152,10 @@ class UserOut(BaseModel):
     fullName: Optional[str] = None
     createdAt: str
     profile_pic_url: Optional[str] = None
+    archetype: Optional[str] = None
+
+class ArchetypeIn(BaseModel):
+    archetype: str
 
 class AvailabilityIn(BaseModel):
     date: str # YYYY-MM-DD
@@ -171,7 +176,6 @@ class BookAppointmentIn(BaseModel):
 
 app = FastAPI(title="EZAMU POC Backend (DB)")
 
-# Adjust these if your frontend runs on a different origin
 allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -246,7 +250,8 @@ def login(user_in: LoginIn, db: Session = Depends(get_db)):
         role = user.role,
         fullName = user.fullName or None,
         createdAt = user.createdAt.isoformat(),
-        profile_pic_url = user.profile_pic_url if hasattr(user, 'profile_pic_url') else None
+        profile_pic_url = user.profile_pic_url if hasattr(user, 'profile_pic_url') else None,
+        archetype = user.archetype if hasattr(user, 'archetype') else None
     )
 
 
@@ -258,6 +263,25 @@ def signup_alias(user_in: RegisterIn, db: Session = Depends(get_db)):
 @app.post("/api/login", response_model=UserOut)
 def login_alias(user_in: LoginIn, db: Session = Depends(get_db)):
     return login(user_in, db)
+
+# list of coaches
+@app.get("/api/coaches")
+def get_coaches(db: Session = Depends(get_db)):
+    coaches = db.query(User).filter(User.role == "coach").all()
+    result = []
+    for coach in coaches:
+        # If the path is already absolute (starts with /static/), use as is; otherwise, prepend
+        if coach.profile_pic_url and coach.profile_pic_url.startswith("/static/"):
+            profile_pic_url = coach.profile_pic_url
+        else:
+            profile_pic_url = None
+        result.append({
+            "id": coach.id,
+            "name": coach.fullName or coach.email,
+            "description": coach.archetype or "Coach at EZAMU platform",
+            "profile_pic_url": profile_pic_url
+        })
+    return result
 
 @app.get("/users/{user_id}/appointments")
 def get_appointments(user_id: int, db: Session = Depends(get_db)):
@@ -293,6 +317,21 @@ def get_action_items(user_id: int, db: Session = Depends(get_db)):
         {"id": ai.id, "description": ai.description, "completed": ai.completed}
         for ai in user.action_items
     ]
+
+@app.post("/users/{user_id}/change_password")
+def change_password(user_id: int, data: ChangePasswordIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not pwd_context.verify(data.current_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    
+    user.password_hash = pwd_context.hash(data.new_password)
+    db.commit()
+    db.refresh(user)
+    return {"message": "Password updated successfully"}
+
 
 @app.post("/users/{user_id}/change_email/")
 def change_email(user_id: int, data: ChangeEmailIn, db: Session = Depends(get_db)):
@@ -352,6 +391,38 @@ def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
         for student in coach.students
     ]
 
+@app.get("/parents/{parent_id}/students")
+def get_parent_students(parent_id: int, db: Session = Depends(get_db)):
+    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    if not parent:
+        raise HTTPException(status_code = 404, detail = "Parent not found")
+    
+    return [
+        {
+            "id": student.id,
+            "email": student.email,
+            "fullName": student.fullName,
+            "createdAt": student.createdAt.isoformat()
+        }
+        for student in parent.children
+    ]
+
+@app.get("/peers/{peer_id}/students")
+def get_peer_students(peer_id: int, db: Session = Depends(get_db)):
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    if not peer:
+        raise HTTPException(status_code = 404, detail = "Peer not found")
+    
+    return [
+        {
+            "id": student.id,
+            "email": student.email,
+            "fullName": student.fullName,
+            "createdAt": student.createdAt.isoformat()
+        }
+        for student in peer.peers
+    ]
+
 @app.post("/students/{student_id}/assign_coach/{coach_id}")
 def assign_coach(student_id: int, coach_id: int, db: Session = Depends(get_db)):
     student = db.query(User).filter(User.id == student_id, User.role == "student").first()
@@ -366,6 +437,54 @@ def assign_coach(student_id: int, coach_id: int, db: Session = Depends(get_db)):
     db.refresh(student)
 
     return {"message": "Coach assigned successfully"}
+
+@app.post("/students/{student_id}/assign_parent/{parent_id}")
+def assign_parent(student_id: int, parent_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    if not student:
+        raise HTTPException(status_code = 404, detail = "Student not found")
+    if not parent:
+        raise HTTPException(status_code = 404, detail = "Parent not found")
+    
+    student.parentID = parent_id
+    db.commit()
+    db.refresh(student)
+
+    return {"message": "Parent assigned successfully"}
+
+@app.post("/students/{student_id}/assign_peer/{peer_id}")
+def assign_peer(student_id: int, peer_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code = 404, detail = "Student not found")
+    if not peer:
+        raise HTTPException(status_code = 404, detail = "Peer not found")
+    if student_id == peer_id:
+        raise HTTPException(status_code = 400, detail = "Cannot assign a user to be their own peer")
+    
+    if student.peerID and student.peerID != peer_id:
+        old_peer = db.query(User).filter(User.id == student.peerID).first()
+        if old_peer:
+            old_peer.peerID = None
+        student.peerID = None
+        db.flush()
+    
+    if peer.peerID and peer.peerID != student_id:
+        other_peer = db.query(User).filter(User.id == peer.peerID).first()
+        if other_peer:
+            other_peer.peerID = None
+        peer.peerID = None
+        db.flush()
+    
+    student.peerID = peer_id
+    peer.peerID = student_id
+    db.commit()
+    db.refresh(student)
+    db.refresh(peer)
+
+    return {"message": "Peer assigned successfully"}
 
 @app.get("/coaches/{coach_id}/students/{student_id}/action_items")
 def get_student_action_items(coach_id: int, student_id: int, db: Session = Depends(get_db)):
@@ -513,3 +632,23 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
         "title": new_appointment.title,
         "scheduledAt": new_appointment.scheduledAt.isoformat()
     }
+
+@app.post("/users/{user_id}/set_archetype")
+def set_archetype(user_id: int, data: ArchetypeIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code = 404, detail = "User not found")
+    
+    user.archetype = data.archetype
+    db.commit()
+    db.refresh(user)
+    
+    return {"message": "Archetype updated successfully"}
+
+@app.get("/users/{user_id}/archetype")
+def get_archetype(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"user_id": user.id, "archetype": user.archetype}

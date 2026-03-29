@@ -76,6 +76,17 @@ function StudentDashboard() {
    },
  ];
 
+  const assignedParent = { //dummy data!!
+    name: "Jane Smith",
+    email: "jane.smith@email.com",
+    relationship: "Mother",
+  };
+
+  const assignedPeer = { //dummy data!!
+    name: "Alex Rivera",
+    email: "alex.rivera@email.com",
+    major: "Computer Science",
+  };
 
   const toggleComplete = (itemId) => {
     setCompletedItems((prev) => ({
@@ -289,6 +300,86 @@ function StudentDashboard() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Parent Section */}
+            <div
+              style={{
+                backgroundColor: "#f8f9fa",
+                borderRadius: "8px",
+                padding: "1.5rem",
+                marginBottom: "2rem",
+                border: "1px solid #e9ecef",
+              }}
+            >
+              <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#333" }}>
+                Your Parent
+              </h2>
+
+              {assignedParent ? (
+                <div
+                  style={{
+                    backgroundColor: "#fff",
+                    padding: "1rem",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
+                    {assignedParent.name}
+                  </p>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#666" }}>
+                    📧 {assignedParent.email}
+                  </p>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.85rem", color: "#999" }}>
+                    {assignedParent.relationship}
+                  </p>
+                </div>
+              ) : (
+                <p style={{ color: "#666", fontSize: "0.9rem" }}>
+                  No parent assigned yet.
+                </p>
+              )}
+            </div>
+
+            {/* Peer Section */}
+            <div
+              style={{
+                backgroundColor: "#f8f9fa",
+                borderRadius: "8px",
+                padding: "1.5rem",
+                marginBottom: "2rem",
+                border: "1px solid #e9ecef",
+              }}
+            >
+              <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#333" }}>
+                Your Peer
+              </h2>
+
+              {assignedPeer ? (
+                <div
+                  style={{
+                    backgroundColor: "#fff",
+                    padding: "1rem",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
+                    {assignedPeer.name}
+                  </p>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#666" }}>
+                    📧 {assignedPeer.email}
+                  </p>
+                  <p style={{ margin: "0.25rem 0", fontSize: "0.85rem", color: "#999" }}>
+                    {assignedPeer.major}
+                  </p>
+                </div>
+              ) : (
+                <p style={{ color: "#666", fontSize: "0.9rem" }}>
+                  No peer assigned yet.
+                </p>
+              )}
             </div>
 
             {/* Quick Access Tiles */}
