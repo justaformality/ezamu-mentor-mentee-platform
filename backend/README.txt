@@ -51,6 +51,18 @@ How to run (local)
    - Enter the password you created during PostgreSQL installation
 6) Create a database 
    - CREATE DATABASE ezamu_db; 
+
+**If you are recreating the database:**
+- Stop the backend server if it is running.
+- Open psql connected to the default postgres DB:
+  - psql -U postgres -d postgres
+- Drop and recreate the app database:
+  - DROP DATABASE IF EXISTS ezamu_db;
+  - CREATE DATABASE ezamu_db;
+- Exit:
+  - \q
+
+  
 7) Choose one of the following options
    Option A - Use default postgres User
       -If you plan to use the postgres user
