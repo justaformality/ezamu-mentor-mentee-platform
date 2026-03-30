@@ -2,6 +2,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+function normalizeRole(role) {
+  return String(role || "").trim().toLowerCase();
+}
+
 function SignInPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -50,8 +54,11 @@ function SignInPage() {
       localStorage.setItem("user", JSON.stringify(data));
 
       // Redirect based on backend role
-      if (data.role === "coach" || data.role === "mentor") {
+      const role = normalizeRole(data.role);
+      if (role === "coach" || role === "mentor") {
         navigate("/coach-dashboard");
+      } else if (role === "parent") {
+        navigate("/parent-dashboard");
       } else {
         navigate("/student-dashboard");
       }

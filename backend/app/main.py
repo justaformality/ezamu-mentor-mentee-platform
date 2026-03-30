@@ -8,7 +8,7 @@ from datetime import datetime, timezone, date, time
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
@@ -196,6 +196,15 @@ def _map_full_name(payload: Dict[str, Any]) -> str:
     return str(val).strip()
 
 
+def _safe_int(value: Optional[str]) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=4)
@@ -276,6 +285,7 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -464,6 +474,29 @@ def upload_profile_pic(user_id: int, file: UploadFile = File(...), db: Session =
     db.commit()
     db.refresh(user)
     return {"message": "Profile picture updated", "profile_pic_url": rel_url}
+
+#for parents to search their kids
+@app.get("/students/by_email")
+def get_student_by_email(email: str = Query(...), db: Session = Depends(get_db)):
+    normalized_email = _normalize_email(email)
+    student = db.query(User).filter(User.email == normalized_email, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if student.profile_pic_url and student.profile_pic_url.startswith("/static/"):
+        profile_pic_url = student.profile_pic_url
+    else:
+        profile_pic_url = None
+
+    return {
+        "id": student.id,
+        "email": student.email,
+        "role": student.role,
+        "fullName": student.fullName,
+        "createdAt": student.createdAt.isoformat(),
+        "profile_pic_url": profile_pic_url,
+        "archetype": student.archetype,
+    }
 
 @app.get("/coaches/{coach_id}/students")
 def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
@@ -936,6 +969,112 @@ def get_student_profile(student_id: int, db: Session = Depends(get_db)):
         bio=student.student_bio,
         goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
     )
+
+@app.get("/students/{student_id}/parent")
+def get_student_parent(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if not student.parentID:
+        return {"parent": None}
+
+    parent = db.query(User).filter(User.id == student.parentID, User.role == "parent").first()
+    if not parent:
+        return {"parent": None}
+
+    return {
+        "parent": {
+            "id": parent.id,
+            "fullName": parent.fullName,
+            "email": parent.email,
+        }
+    }
+
+
+@app.get("/students/{student_id}/peer")
+def get_student_peer(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if not student.peerID:
+        return {"peer": None}
+
+    peer = db.query(User).filter(User.id == student.peerID, User.role == "student").first()
+    if not peer:
+        return {"peer": None}
+
+    return {
+        "peer": {
+            "id": peer.id,
+            "fullName": peer.fullName,
+            "email": peer.email,
+            "age": peer.student_age,
+        }
+    }
+
+
+@app.get("/students/{student_id}/peer/recommendation")
+def recommend_peer(student_id: int, exclude_ids: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    student_age = _safe_int(student.student_age)
+
+    excluded_set = set()
+    if exclude_ids:
+        excluded_set = {
+            int(part.strip())
+            for part in exclude_ids.split(",")
+            if part.strip().isdigit()
+        }
+
+    candidates = db.query(User).filter(
+        User.role == "student",
+        User.id != student_id,
+        User.peerID.is_(None),
+    ).all()
+
+    if excluded_set:
+        candidates = [candidate for candidate in candidates if candidate.id not in excluded_set]
+
+    # If the student has no parseable age, return the first available candidate.
+    if student_age is None:
+        candidate = candidates[0] if candidates else None
+    else:
+        filtered = []
+        for candidate in candidates:
+            candidate_age = _safe_int(candidate.student_age)
+            if candidate_age is None:
+                continue
+            if abs(candidate_age - student_age) <= 4:
+                filtered.append(candidate)
+
+        candidate = filtered[0] if filtered else None
+
+    if not candidate:
+        return {"peer": None}
+
+    goals = []
+    if candidate.student_goals_json:
+        try:
+            parsed_goals = json.loads(candidate.student_goals_json)
+            if isinstance(parsed_goals, list):
+                goals = [str(item) for item in parsed_goals if str(item).strip()]
+        except (TypeError, ValueError):
+            goals = []
+
+    return {
+        "peer": {
+            "id": candidate.id,
+            "fullName": candidate.fullName,
+            "email": candidate.email,
+            "age": candidate.student_age,
+            "goals": goals,
+        }
+    }
 
 @app.get("/coaches/{coach_id}/students/{student_id}/action_items")
 def get_student_action_items(coach_id: int, student_id: int, db: Session = Depends(get_db)):

@@ -2,6 +2,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+function normalizeRole(role) {
+  return String(role || "").trim().toLowerCase();
+}
+
 function SignUpPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -14,6 +20,7 @@ function SignUpPage() {
 
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -53,19 +60,20 @@ function SignUpPage() {
       if (response.ok) {
         // Store the full user object returned from the backend
         // If your backend returns { user: {...} }, use data.user; otherwise, use data directly
-        const userObj = data.user || data;
+        let userObj = data.user || data;
         localStorage.setItem("user", JSON.stringify(userObj));
         window.user = userObj;
         setMessage("Sign up successful! Redirecting...");
 
         // Force reload to update navbar state
         setTimeout(() => {
-          if (userObj.role === "student") {
+          const role = normalizeRole(userObj.role);
+          if (role === "student") {
             window.location.href = "/student-registration";
-          } else if (userObj.role === "coach") {
+          } else if (role === "coach" || role === "mentor") {
             window.location.href = "/coach-registration";
-          } else if (userObj.role === "parent") {
-            window.location.href = "/coach-dashboard";
+          } else if (role === "parent") {
+            window.location.href = "/parent-dashboard";
           }
         }, 500);
       } else {

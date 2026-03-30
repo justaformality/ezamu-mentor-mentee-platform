@@ -1,7 +1,36 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; //new
 
-const [assessmentres, setresults] = useState([]);
+const HEROES = {
+  thinker: {
+    key: "thinker",
+    label: "Thinker",
+    description:
+      "You love ideas, problem-solving, innovation, and figuring out how things work.",
+    careers: ["Engineering", "Research", "Data Science", "Policy", "Product Strategy"],
+  },
+  helper: {
+    key: "helper",
+    label: "Helper",
+    description:
+      "You care about people, connection, support, encouragement, and making a difference.",
+    careers: ["Teaching", "Counseling", "Social Work", "Journalism", "Healthcare"],
+  },
+  planner: {
+    key: "planner",
+    label: "Planner",
+    description:
+      "You thrive on structure, responsibility, follow-through, and building dependable systems.",
+    careers: ["Project Management", "Operations", "Business", "Administration", "Finance"],
+  },
+  doer: {
+    key: "doer",
+    label: "Doer",
+    description:
+      "You learn by doing, move fast, enjoy action, and like flexible, energetic environments.",
+    careers: ["Media", "Entrepreneurship", "Sports", "Marketing", "Tech Support"],
+  },
+};
 
 const formatDateBadge = (dateStr) => {
   const date = new Date(dateStr);
@@ -11,31 +40,94 @@ const formatDateBadge = (dateStr) => {
   };
 };
 
+const parseTopHeroFromArchetype = (archetype) => {
+  if (!archetype) return "";
+  const firstSegment = archetype.split("_")[0] || "";
+  const match = firstSegment.match(/^[A-Za-z]+/);
+  return match ? match[0] : firstSegment;
+};
+
+const parseRankingFromArchetype = (archetype) => {
+  if (!archetype) return [];
+
+  return archetype
+    .split("_")
+    .map((segment) => {
+      const match = segment.match(/^([A-Za-z]+)(\d+)$/);
+      if (!match) return null;
+      const [, rawLabel, rawScore] = match;
+      const key = rawLabel.toLowerCase();
+      const hero = HEROES[key];
+      if (!hero) return null;
+      return {
+        ...hero,
+        score: Number(rawScore),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score);
+};
+
+const generateAiSummary = (topHero, secondHero, ranking) => {
+  if (!topHero || !secondHero) return null;
+
+  const pathwayMap = {
+    thinker: "innovation, engineering, research, strategy, or data-driven careers",
+    helper: "coaching, teaching, counseling, communication, or service-driven careers",
+    planner: "operations, project planning, leadership support, business, or structured career paths",
+    doer: "hands-on, creative, entrepreneurial, fast-moving, or action-based careers",
+  };
+
+  const learningStyleMap = {
+    thinker: "You learn best when you understand the why behind something.",
+    helper: "You learn best through people, discussion, and meaningful connection.",
+    planner: "You learn best with structure, checklists, and clear next steps.",
+    doer: "You learn best by trying things and building confidence through action.",
+  };
+
+  return {
+    headline: `${topHero.label} first, ${secondHero.label} second`,
+    summary: `Your results suggest you lead most strongly with ${topHero.label} energy, with ${secondHero.label} as a strong secondary strength. That means you may feel most motivated in environments that align with ${pathwayMap[topHero.key]}.`,
+    strengths: [
+      `Top strength: ${topHero.description}`,
+      `Secondary strength: ${secondHero.description}`,
+      learningStyleMap[topHero.key],
+    ],
+    nextSteps: [
+      `Explore majors and careers connected to ${topHero.careers.slice(0, 3).join(", ")}.`,
+      "Book time with a mentor who matches your top strength profile.",
+      "Use your results to build a college and career roadmap inside Ezamu.",
+    ],
+    marketingBlurb:
+      "Ezamu can use this profile to recommend mentors, pathway content, and action steps that fit how you naturally think, work, and grow.",
+    rankingText: ranking
+      .map((item, index) => `${index + 1}. ${item.label} (${item.score})`)
+      .join(" • "),
+  };
+};
+
 function StudentDashboard() {
   const [completedItems, setCompletedItems] = useState({});
   const [studentName, setStudentName] = useState("");
+  const [topInnerHero, setTopInnerHero] = useState("");
+  const [assessmentSummary, setAssessmentSummary] = useState("");
+  const [assessmentInsights, setAssessmentInsights] = useState(null);
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false);
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) {
       const parsed = JSON.parse(stored);
       setStudentName(parsed.fullName || parsed.name || "Student");
+      const archetype = parsed.archetype || "";
+      const ranking = parseRankingFromArchetype(archetype);
+      const derivedTopHero = ranking[0]?.label || parseTopHeroFromArchetype(archetype);
+      const derivedSummary = ranking.length > 1 ? generateAiSummary(ranking[0], ranking[1], ranking) : null;
+
+      setTopInnerHero(derivedTopHero);
+      setAssessmentInsights(derivedSummary);
+      setAssessmentSummary(derivedSummary?.summary || "");
     }
   }, []);
-  useEffect(() => { //new
-  const storedResults = localStorage.getItem("assessmentres");
-  if (storedResults) {
-    const parsed = JSON.parse(storedResults);
-    setresults([
-      {
-        id: 1,
-        name: "Inner Hero",
-        scoreText: parsed.ranking[0].label,
-        summary: parsed.aiSummary.summary,
-        completedOn: new Date().toLocaleDateString(),
-      },
-    ]);
-  }
-}, []);
 
   const coachImages = {
     "Sarah Johnson": "/src/assets/imgs/coach-test.jpg",
@@ -67,35 +159,6 @@ function StudentDashboard() {
       duration: "30 min",
     },
   ];
-
-  const recentResults = {
-    test: "Myers-Briggs Type Indicator",
-    type: "ENFP",
-    date: "Jan 28, 2026",
-    description: "The Campaigner - Enthusiastic and creative people-person",
-  };
-
-  const assessmentResults = [
-     {
-     id: 1,
-     name: "Inner Hero",
-     scoreText: "Planner",
-     summary: "Organized, dependable, punctual, and responsibility-driven.",
-     completedOn: "Jan 28, 2026",
-   },
-   {
-     id: 2,
-     name: "Career Interests",
-     scoreText: "Top match: Project Coordinator / Operations",
-     completedOn: "Feb 02, 2026",
-   },
- ];
-
-  const assignedParent = { //dummy data!!
-    name: "Jane Smith",
-    email: "jane.smith@email.com",
-    relationship: "Mother",
-  };
 
   const assignedPeer = { //dummy data!!
     name: "Alex Rivera",
@@ -149,13 +212,13 @@ function StudentDashboard() {
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "high":
-        return "#ff6b6b";
+        return "#121c34";
       case "medium":
-        return "#ffa500";
+        return "#394c7a";
       case "low":
-        return "#4ecdc4";
+        return "rgb(78, 175, 205)";
       default:
-        return "#999";
+        return "#add8e6";
     }
   };
 
@@ -334,10 +397,13 @@ function StudentDashboard() {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
-                    alignItems: "center",
+                    alignItems: "stretch",
                   }}
                 >
-                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>S.M.A.R.T. Goals</h3>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>S.M.A.R.T. Goals</h3>
+                    <span style={{ color: "#1c2740", fontSize: "1.1rem", fontWeight: 700 }}>→</span>
+                  </div>
                   <p style={{ margin: "0.5rem 0 0", color: "#666" }}>View your goal strategy and progress</p>
                 </div>
               </a>
@@ -360,62 +426,21 @@ function StudentDashboard() {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
-                    alignItems: "center",
+                    alignItems: "stretch",
                     cursor: "pointer",
                   }}
                 >
-                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>
-                    Your Team
-                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>
+                      Your Team
+                    </h3>
+                    <span style={{ color: "#1c2740", fontSize: "1.1rem", fontWeight: 700 }}>→</span>
+                  </div>
                   <p style={{ margin: "0.5rem 0 0", color: "#666" }}>
                     Meet your mentors and collaborators
                   </p>
                 </div>
               </Link>
-            </div>
-
-            {/* Recent Personality Results */}
-            <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "1.5rem",
-                border: "1px solid #e9ecef",
-                marginBottom: "2rem",
-              }}
-            >
-              <h2 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", color: "#333" }}>
-                Recent Personality Results
-              </h2>
-              <div
-                style={{
-                  backgroundColor: "#fff",
-                  padding: "1.5rem",
-                  borderRadius: "6px",
-                  textAlign: "center",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <p style={{ margin: "0", fontSize: "0.85rem", color: "#999" }}>
-                  {recentResults.test}
-                </p>
-                <p
-                  style={{
-                    margin: "0.5rem 0",
-                    fontSize: "2rem",
-                    fontWeight: "700",
-                    color: "#007bff",
-                  }}
-                >
-                  {recentResults.type}
-                </p>
-                <p style={{ margin: "1rem 0 0.5rem 0", color: "#666" }}>
-                  {recentResults.description}
-                </p>
-                <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.85rem", color: "#999" }}>
-                  Completed: {recentResults.date}
-                </p>
-              </div>
             </div>
 
             {/* Assessment Results */}
@@ -434,45 +459,116 @@ function StudentDashboard() {
 
 
              <p style={{ marginTop: "0", marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
-             {assessmentres.length > 0
-              ? `You have ${assessmentres.length} recent assessment result(s).`
+             {topInnerHero
+              ? `Your top Inner Hero is ${topInnerHero}.`
               : "No assessment results yet."}
              </p>
 
 
-             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {assessmentres.map((a) => (
+             {topInnerHero && (
+              <button
+                type="button"
+                onClick={() => setShowAssessmentModal(true)}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#fff",
+                  padding: "1rem",
+                  borderRadius: "6px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  borderLeft: "4px solid #add8e6",
+                  borderTop: "none",
+                  borderRight: "none",
+                  borderBottom: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontWeight: "600", color: "#333", fontSize: "1rem" }}>
+                  {topInnerHero}
+                </span>
+                <span style={{ color: "#1c2740", fontSize: "1.1rem", fontWeight: 700 }}>→</span>
+              </button>
+             )}
+         </div>
+         </div>
+
+         {showAssessmentModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+              zIndex: 1000,
+            }}
+            onClick={() => setShowAssessmentModal(false)}
+          >
             <div
-              key={a.id}
-               style={{
-               backgroundColor: "#fff",
-               padding: "1rem",
-               borderRadius: "6px",
-               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-               borderLeft: "4px solid #007bff",
+              style={{
+                width: "100%",
+                maxWidth: "560px",
+                backgroundColor: "#fff",
+                borderRadius: "14px",
+                padding: "1.5rem",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.2)",
               }}
-             >
-           <p style={{ margin: "0 0 0.25rem 0", fontWeight: "600", color: "#333" }}>
-            {a.name}
-           </p>
-           <p style={{ margin: "0.25rem 0", color: "#666", fontSize: "0.9rem" }}>
-           {a.scoreText}
-           </p>
-           {a.summary && (
-           <p style={{ margin: "0.25rem 0", color: "#666", fontSize: "0.9rem" }}>
-            {a.summary}
-             </p>
-           )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <h3 style={{ margin: 0, color: "#1c2740", fontSize: "1.3rem" }}>{topInnerHero || "Inner Hero"}</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAssessmentModal(false)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#1c2740",
+                    fontSize: "1.2rem",
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <p style={{ margin: 0, color: "#555", lineHeight: 1.7 }}>
+                {assessmentSummary || "No detailed summary is available yet."}
+              </p>
 
+              {assessmentInsights?.strengths?.length > 0 && (
+                <div style={{ marginTop: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.5rem", color: "#1c2740", fontSize: "1rem" }}>AI Insight Summary</h4>
+                  <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#1c2740", lineHeight: 1.7 }}>
+                    {assessmentInsights.strengths.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-           <p style={{ margin: "0.25rem 0 0 0", color: "#999", fontSize: "0.85rem" }}>
-            Completed: {a.completedOn}
-           </p>
-           </div>
-          ))}
+              {assessmentInsights?.nextSteps?.length > 0 && (
+                <div style={{ marginTop: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.5rem", color: "#1c2740", fontSize: "1rem" }}>Suggested Next Steps</h4>
+                  <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#1c2740", lineHeight: 1.7 }}>
+                    {assessmentInsights.nextSteps.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {assessmentInsights?.marketingBlurb && (
+                <p style={{ marginTop: "1rem", marginBottom: 0, color: "#1c2740", lineHeight: 1.7 }}>
+                  <strong>How Ezamu uses this:</strong> {assessmentInsights.marketingBlurb}
+                </p>
+              )}
+            </div>
           </div>
-         </div>
-         </div>
+         )}
 
           {/* RIGHT COLUMN */}
           <div
@@ -485,7 +581,7 @@ function StudentDashboard() {
             }}
           >
             <h2 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", color: "#333" }}>
-              ✅ Actionable Items
+              To Do Items
             </h2>
             {/*adding below this for progress bar! */}
             <div style={{ marginBottom: "1.25rem" }}>

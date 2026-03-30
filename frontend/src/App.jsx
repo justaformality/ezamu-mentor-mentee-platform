@@ -16,7 +16,7 @@ import ProfilePage from "./pages/profile.jsx";
 import ContactUs from "./pages/contactus.jsx";
 import TeamPage from "./pages/teampage.jsx";
 import StudentInfo from "./pages/student-info.jsx";
-
+import ParentDashboard from "./pages/parent-dashbaord.jsx";
 
 function App() {
   return (
@@ -37,6 +37,7 @@ function App() {
         <Route path="/contactus" element={<ContactUs />} />
         <Route path="/team" element={<TeamPage />} />
         <Route path="/student-info/:studentId" element={<StudentInfo />} />
+        <Route path="/parent-dashboard" element={<ParentDashboard />} />
       </Routes>
     </Router>
   );

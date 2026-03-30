@@ -75,21 +75,43 @@ function LandingPage() {
                 width: "100%",
                 maxWidth: "440px",
                 borderRadius: "1rem",
-                border: "2px dashed #fff",
+                border: "1px solid rgba(255,255,255,0.5)",
                 overflow: "hidden",
                 minHeight: "250px",
-                background: "#fff",
+                background: "rgba(255,255,255,0.12)",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                flexDirection: "column",
+                padding: "1.25rem",
               }}
             >
-              <img
-                src="/src/assets/imgs/preview-student.png"
-                alt="Student dashboard preview"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                onError={e => { e.target.onerror = null; e.target.src = "/src/assets/imgs/preview-student.png"; }}
-              />
+              <h3 style={{ marginTop: 0, marginBottom: "0.5rem", color: "#fff", fontSize: "1.5rem", fontWeight: 700 }}>
+                Welcome video
+              </h3>
+              <p style={{ marginTop: 0, marginBottom: "1rem", color: "#e9f7ff", lineHeight: 1.6, fontSize: "0.98rem" }}>
+                Get a quick walkthrough of how Ezamu helps you choose pathways, connect with mentors, and take your next steps.
+              </p>
+              <div
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  minHeight: "170px",
+                  borderRadius: "0.8rem",
+                  border: "1px dashed #add8e6",
+                  background: "rgba(255,255,255,0.92)",
+                  overflow: "hidden",
+                }}
+              >
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ minHeight: "170px", border: "0" }}
+                  src="https://www.youtube.com/embed/aJgp3tIzZzA"
+                  title="Ezamu welcome video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
             </div>
           </div>
         </section>

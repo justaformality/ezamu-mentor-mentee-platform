@@ -1,34 +1,36 @@
 import { useMemo, useState } from "react";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const HEROES = {
   thinker: {
     label: "Thinker",
-    color: "#6b46c1",
-    accentBg: "#f4efff",
+    color: "#1c2740",
+    accentBg: "#add8e6",
     description:
       "You love ideas, problem-solving, innovation, and figuring out how things work.",
     careers: ["Engineering", "Research", "Data Science", "Policy", "Product Strategy"],
   },
   helper: {
     label: "Helper",
-    color: "#c96a1b",
-    accentBg: "#fff3e8",
+    color: "#1c2740",
+    accentBg: "#add8e6",
     description:
       "You care about people, connection, support, encouragement, and making a difference.",
     careers: ["Teaching", "Counseling", "Social Work", "Journalism", "Healthcare"],
   },
   planner: {
     label: "Planner",
-    color: "#2c7a7b",
-    accentBg: "#edf8f7",
+    color: "#1c2740",
+    accentBg: "#add8e6",
     description:
       "You thrive on structure, responsibility, follow-through, and building dependable systems.",
     careers: ["Project Management", "Operations", "Business", "Administration", "Finance"],
   },
   doer: {
     label: "Doer",
-    color: "#c23d7d",
-    accentBg: "#fff0f7",
+    color: "#1c2740",
+    accentBg: "#add8e6",
     description:
       "You learn by doing, move fast, enjoy action, and like flexible, energetic environments.",
     careers: ["Media", "Entrepreneurship", "Sports", "Marketing", "Tech Support"],
@@ -163,7 +165,7 @@ const QUESTIONS = [
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #fff7f5 0%, #fdebe7 100%)",
+    background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
     padding: "2.5rem 1.25rem 4.5rem",
     display: "flex",
     justifyContent: "center",
@@ -180,15 +182,15 @@ const styles = {
     alignItems: "stretch",
   },
   heroCard: {
-    background: "linear-gradient(180deg, #fffdfc 0%, #fff5f2 100%)",
+    background: "linear-gradient(180deg, #ffffff 0%, #f4fbff 100%)",
     borderRadius: "28px",
     padding: "2rem",
-    boxShadow: "0 20px 48px rgba(91, 29, 41, 0.10)",
-    border: "1px solid #efcfc9",
+    boxShadow: "0 20px 48px rgba(28, 39, 64, 0.10)",
+    border: "1px solid #add8e6",
   },
   eyebrow: {
     display: "inline-block",
-    background: "#f6d9d1",
+    background: "#add8e6",
     color: "#1c2740",
     borderRadius: "999px",
     padding: "0.45rem 0.95rem",
@@ -227,15 +229,15 @@ const styles = {
   videoWrap: {
     borderRadius: "22px",
     overflow: "hidden",
-    border: "1px solid #e9c8c2",
-    background: "#f7efed",
+    border: "1px solid #add8e6",
+    background: "#f4fbff",
     minHeight: "300px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
   videoPlaceholder: {
-    color: "#8c6770",
+    color: "#1c2740",
     fontSize: "1rem",
     fontWeight: 600,
     textAlign: "center",
@@ -250,7 +252,7 @@ const styles = {
   },
   trackerBadge: {
     background: "#fff",
-    border: "1px solid #e7cbc6",
+    border: "1px solid #add8e6",
     borderRadius: "999px",
     padding: "0.75rem 1rem",
     fontWeight: 700,
@@ -260,20 +262,20 @@ const styles = {
   progressTrack: {
     height: "12px",
     width: "100%",
-    background: "#add",
+    background: "#add8e6",
     borderRadius: "999px",
     overflow: "hidden",
     marginTop: "1.15rem",
   },
   progressFill: {
     height: "100%",
-    background: "linear-gradient(90deg, #1c2740, 40%, #0000cd 100%)",
+    background: "#1c2740",
     transition: "width 0.25s ease",
     borderRadius: "999px",
   },
   progressText: {
     marginTop: "0.95rem",
-    color: "#0000cd",
+    color: "#1c2740",
     fontWeight: 700,
     fontSize: "1.05rem",
   },
@@ -281,18 +283,18 @@ const styles = {
     background: "#ffffff",
     borderRadius: "30px",
     padding: "2rem",
-    boxShadow: "0 24px 50px rgba(91, 29, 41, 0.12)",
-    border: "1px solid #ebcfc9",
+    boxShadow: "0 24px 50px rgba(28, 39, 64, 0.12)",
+    border: "1px solid #add8e6",
     marginBottom: "1.4rem",
   },
   questionHeader: {
-    borderBottom: "1px solid #f0dbd6",
+    borderBottom: "1px solid #add8e6",
     paddingBottom: "1rem",
     marginBottom: "1.5rem",
   },
   questionLabel: {
     display: "inline-block",
-    background: "#f8ece8",
+    background: "#add8e6",
     color: "#1c2740",
     borderRadius: "999px",
     padding: "0.42rem 0.85rem",
@@ -309,7 +311,7 @@ const styles = {
     fontWeight: 800,
   },
   questionSubtitle: {
-    color: "#6d4750",
+    color: "#1c2740",
     lineHeight: 1.75,
     fontSize: "1.1rem",
     margin: 0,
@@ -319,26 +321,26 @@ const styles = {
     textAlign: "left",
     padding: "1.25rem 1.35rem",
     borderRadius: "18px",
-    border: "1px solid #e6d3cf",
-    background: "#fffaf8",
-    color: "#47222a",
+    border: "1px solid #add8e6",
+    background: "#f7fcff",
+    color: "#1c2740",
     cursor: "pointer",
     marginBottom: "1rem",
     fontSize: "1.08rem",
     fontWeight: 600,
     lineHeight: 1.65,
     transition: "all 0.2s ease",
-    boxShadow: "0 4px 14px rgba(91, 29, 41, 0.04)",
+    boxShadow: "0 4px 14px rgba(28, 39, 64, 0.08)",
   },
   selectedOption: {
     border: "2px solid #1c2740",
-    background: "#fff1ee",
-    boxShadow: "0 10px 24px rgba(143, 32, 49, 0.10)",
+    background: "#add8e6",
+    boxShadow: "0 10px 24px rgba(28, 39, 64, 0.18)",
   },
   helperText: {
     marginTop: "-0.25rem",
     marginBottom: "1rem",
-    color: "#7a5560",
+    color: "#1c2740",
     fontSize: "0.98rem",
     fontWeight: 600,
   },
@@ -351,7 +353,7 @@ const styles = {
   rankingCard: {
     borderRadius: "20px",
     padding: "1.15rem",
-    background: "#fffaf8",
+    background: "#f7fcff",
     minHeight: "170px",
   },
   rankingTitle: {
@@ -377,7 +379,7 @@ const styles = {
     width: "100%",
     padding: "1rem 1.05rem",
     borderRadius: "16px",
-    border: "1px solid #dfc9c4",
+    border: "1px solid #add8e6",
     fontSize: "1.05rem",
     color: "#121c34",
     background: "#fffdfc",
@@ -389,7 +391,7 @@ const styles = {
     gap: "1rem",
     marginTop: "1.7rem",
     paddingTop: "1.25rem",
-    borderTop: "1px solid #f0dbd6",
+    borderTop: "1px solid #add8e6",
   },
   button: {
     border: "none",
@@ -412,7 +414,7 @@ const styles = {
     marginTop: "1.5rem",
   },
   resultCard: {
-    background: "#fff7f6",
+    background: "#f7fcff",
     borderRadius: "18px",
     padding: "1.1rem",
   },
@@ -513,10 +515,17 @@ function generateAiSummary(topHero, secondHero, ranking) {
   };
 }
 
+function formatArchetypeSummary(results) {
+  return (results?.ranking || [])
+    .map((item) => `${item.label}${item.score}`)
+    .join("_");
+}
+
 function Assessment() {
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState(getInitialResponses());
   const [submitted, setSubmitted] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   const currentQuestion = QUESTIONS[currentStep];
   const progress = ((currentStep + 1) / QUESTIONS.length) * 100;
@@ -599,26 +608,49 @@ function Assessment() {
   const handleSubmit = async () => {
     const finalResults = calculateResults(responses);
 
-    localStorage.setItem("assessmentResults", JSON.stringify(finalResults));
+    setSubmitted(true);
+  };
+
+  const handleSaveResults = async () => {
+    if (!results) return;
 
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-
-        await fetch(`http://127.0.0.1:8000/users/${user.id}/set_archetype`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            archetype: finalResults.ranking[0].label,
-          }),
-        });
-      } catch (error) {
-        console.error("Could not save archetype to backend:", error);
-      }
+    if (!storedUser) {
+      setSaveMessage("Please sign in to save your results.");
+      return;
     }
 
-    setSubmitted(true);
+    try {
+      const user = JSON.parse(storedUser);
+      const archetypeSummary = formatArchetypeSummary(results);
+      if (!archetypeSummary) {
+        setSaveMessage("Could not determine results to save.");
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/users/${user.id}/set_archetype`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archetype: archetypeSummary }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveMessage(data.detail || "Failed to save results.");
+        return;
+      }
+
+      const updatedUser = { ...user, archetype: archetypeSummary };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setSaveMessage("Results saved to your profile.");
+    } catch (error) {
+      console.error("Could not save archetype to backend:", error);
+      setSaveMessage("Error saving results.");
+    }
+  };
+
+  const handleGoToSignin = () => {
+    window.location.href = "/signin";
   };
 
   const renderQuestion = () => {
@@ -735,6 +767,12 @@ function Assessment() {
 
   if (submitted && results) {
     const top = results.ranking[0];
+    let isLoggedIn = false;
+    try {
+      isLoggedIn = !!JSON.parse(localStorage.getItem("user") || "null")?.id;
+    } catch {
+      isLoggedIn = false;
+    }
 
     return (
       <main style={styles.page}>
@@ -776,7 +814,7 @@ function Assessment() {
                 background: "#fff",
                 borderRadius: "18px",
                 padding: "1.2rem",
-                border: "1px solid #efd6d1",
+                border: "1px solid #add8e6",
               }}
             >
               <h3 style={{ marginTop: 0, color: "#1c2740", fontSize: "1.3rem" }}>
@@ -789,13 +827,13 @@ function Assessment() {
               </ul>
 
               <h3 style={{ color: "#1c2740", fontSize: "1.3rem" }}>Suggested Next Steps</h3>
-              <ul style={{ color: "#65424a", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
+              <ul style={{ color: "#1c2740", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
                 {results.aiSummary.nextSteps.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
 
-              <p style={{ marginTop: "1rem", color: "#6c4a52", fontSize: "1rem", lineHeight: 1.7 }}>
+              <p style={{ marginTop: "1rem", color: "#1c2740", fontSize: "1rem", lineHeight: 1.7 }}>
                 <strong>How Ezamu uses this:</strong> {results.aiSummary.marketingBlurb}
               </p>
             </div>
@@ -813,28 +851,46 @@ function Assessment() {
                   setResponses(getInitialResponses());
                   setCurrentStep(0);
                   setSubmitted(false);
+                  setSaveMessage("");
                 }}
                 style={{
                   ...styles.button,
                   background: "#fff",
-                  border: "1px solid #d7b7b1",
+                  border: "1px solid #add8e6",
                   color: "#1c2740 ",
                 }}
               >
                 Retake Assessment
               </button>
 
-              <button
-                onClick={() => (window.location.href = "/signup")}
-                style={{
-                  ...styles.button,
-                  background: "#1c2740",
-                  color: "#fff",
-                }}
-              >
-                Continue to Sign Up
-              </button>
+              {isLoggedIn ? (
+                <button
+                  onClick={handleSaveResults}
+                  style={{
+                    ...styles.button,
+                    background: "#1c2740",
+                    color: "#fff",
+                  }}
+                >
+                  Save Results
+                </button>
+              ) : (
+                <button
+                  onClick={handleGoToSignin}
+                  style={{
+                    ...styles.button,
+                    background: "#1c2740",
+                    color: "#fff",
+                  }}
+                >
+                  Sign In to Save Results
+                </button>
+              )}
             </div>
+
+            {saveMessage && (
+              <p style={{ marginTop: "0.9rem", color: "#1c2740", fontWeight: 600 }}>{saveMessage}</p>
+            )}
           </section>
         </div>
       </main>
@@ -872,19 +928,6 @@ function Assessment() {
               Question {currentStep + 1} of {QUESTIONS.length}
             </p>
           </div>
-
-          <div style={styles.heroCard}>
-            <h3 style={styles.videoTitle}>Welcome video</h3>
-            <p style={styles.videoText}>
-              
-            </p>
-
-            <div style={styles.videoWrap}>
-              <div style={styles.videoPlaceholder}>
-                Add your embedded video here when it is ready.
-              </div>
-            </div>
-          </div>
         </section>
 
         <section style={styles.questionCard}>
@@ -907,7 +950,7 @@ function Assessment() {
                 ...styles.button,
                 background: currentStep === 0 ? "#eee" : "#fff",
                 color: currentStep === 0 ? "#999" : "#1c2740",
-                border: "1px solid #dec4bf",
+                border: "1px solid #add8e6",
               }}
             >
               Back
@@ -919,7 +962,7 @@ function Assessment() {
               disabled={!canGoNext}
               style={{
                 ...styles.button,
-                background: canGoNext ? "#1c2740" : "#d4b7bc",
+                background: canGoNext ? "#1c2740" : "#9ab7d2",
                 color: "#fff",
               }}
             >
