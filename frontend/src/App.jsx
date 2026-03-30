@@ -15,6 +15,7 @@ import AppointmentPage from "./pages/appointment.jsx";
 import ProfilePage from "./pages/profile.jsx";
 import ContactUs from "./pages/contactus.jsx";
 import TeamPage from "./pages/teampage.jsx";
+import StudentInfo from "./pages/student-info.jsx";
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/contactus" element={<ContactUs />} />
         <Route path="/team" element={<TeamPage />} />
+        <Route path="/student-info/:studentId" element={<StudentInfo />} />
       </Routes>
     </Router>
   );

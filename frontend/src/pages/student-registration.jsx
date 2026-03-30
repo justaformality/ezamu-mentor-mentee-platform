@@ -158,18 +158,66 @@ export default function StudentRegistration() {
 		setTouched(false);
 	};
 
-	const handleSave = () => {
+	// const handleSave = () => {
+	// 	if (!isValid) {
+	// 		setTouched(true);
+	// 		return;
+	// 	}
+	// 	setSaving(true);
+	// 	// Simulate save
+	// 	setTimeout(() => {
+	// 		setSaving(false);
+	// 		setSaved(true);
+	// 		navigate("/student-dashboard");
+	// 	}, 1200);
+	// };
+
+	const handleSave = async () => {
 		if (!isValid) {
 			setTouched(true);
 			return;
 		}
+
 		setSaving(true);
-		// Simulate save
-		setTimeout(() => {
+
+		try {
+			const storedUser = localStorage.getItem("user");
+			const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
+			if (!parsedUser?.id) {
+			setSaving(false);
+			return;
+			}
+
+			const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+			const res = await fetch(`${API_BASE}/students/${parsedUser.id}/profile`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				age: form.age,
+				bio: form.bio,
+				goals: form.fields,
+			}),
+			});
+
+			const data = await res.json();
+
+			if (!res.ok) {
+			console.error(data);
+			setSaving(false);
+			return;
+			}
+
 			setSaving(false);
 			setSaved(true);
 			navigate("/student-dashboard");
-		}, 1200);
+		} catch (err) {
+			console.error("Failed to save student profile:", err);
+			setSaving(false);
+		}
 	};
 
 	return (
