@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; //new
 
 const formatDateBadge = (dateStr) => {
   const date = new Date(dateStr);
@@ -140,7 +141,7 @@ function StudentDashboard() {
         return "#999";
     }
   };
-  //adding below this for progress bar
+
   const completedCount = Object.values(completedItems).filter(Boolean).length;
   const progressPercent = Math.round((completedCount / actionableItems.length) * 100);
   
@@ -167,15 +168,12 @@ function StudentDashboard() {
   const incompleteItems = sortedItems.filter((item) => !completedItems[item.id]);
   const completedListItems = sortedItems.filter((item) => completedItems[item.id]);
 
-  const sortedAppointments = [...upcomingAppointments].sort((a, b) => { //created this so appointments are sorted by data
+  const sortedAppointments = [...upcomingAppointments].sort((a, b) => { 
     const dateA = new Date(`${a.date} ${a.time}`);
     const dateB = new Date(`${b.date} ${b.time}`);
     return dateA - dateB;
   });
 
-  //adding above this
-
-  //the dashboard 
   return (
     <main
       style={{
@@ -299,86 +297,6 @@ function StudentDashboard() {
               </div>
             </div>
 
-            {/* Parent Section */}
-            <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "1.5rem",
-                marginBottom: "2rem",
-                border: "1px solid #e9ecef",
-              }}
-            >
-              <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#333" }}>
-                Your Parent
-              </h2>
-
-              {assignedParent ? (
-                <div
-                  style={{
-                    backgroundColor: "#fff",
-                    padding: "1rem",
-                    borderRadius: "6px",
-                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
-                    {assignedParent.name}
-                  </p>
-                  <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#666" }}>
-                    📧 {assignedParent.email}
-                  </p>
-                  <p style={{ margin: "0.25rem 0", fontSize: "0.85rem", color: "#999" }}>
-                    {assignedParent.relationship}
-                  </p>
-                </div>
-              ) : (
-                <p style={{ color: "#666", fontSize: "0.9rem" }}>
-                  No parent assigned yet.
-                </p>
-              )}
-            </div>
-
-            {/* Peer Section */}
-            <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                borderRadius: "8px",
-                padding: "1.5rem",
-                marginBottom: "2rem",
-                border: "1px solid #e9ecef",
-              }}
-            >
-              <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#333" }}>
-                Your Peer
-              </h2>
-
-              {assignedPeer ? (
-                <div
-                  style={{
-                    backgroundColor: "#fff",
-                    padding: "1rem",
-                    borderRadius: "6px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
-                    {assignedPeer.name}
-                  </p>
-                  <p style={{ margin: "0.25rem 0", fontSize: "0.9rem", color: "#666" }}>
-                    📧 {assignedPeer.email}
-                  </p>
-                  <p style={{ margin: "0.25rem 0", fontSize: "0.85rem", color: "#999" }}>
-                    {assignedPeer.major}
-                  </p>
-                </div>
-              ) : (
-                <p style={{ color: "#666", fontSize: "0.9rem" }}>
-                  No peer assigned yet.
-                </p>
-              )}
-            </div>
-
             {/* Quick Access Tiles */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
               <a
@@ -407,8 +325,8 @@ function StudentDashboard() {
                 </div>
               </a>
 
-              <a
-                href="/broken-link"
+              <Link
+                to="/team"
                 style={{
                   textDecoration: "none",
                   color: "inherit",
@@ -426,12 +344,17 @@ function StudentDashboard() {
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
+                    cursor: "pointer",
                   }}
                 >
-                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>Your Team</h3>
-                  <p style={{ margin: "0.5rem 0 0", color: "#666" }}>Meet your mentors and collaborators</p>
+                  <h3 style={{ margin: "0", fontSize: "1rem", color: "#333" }}>
+                    Your Team
+                  </h3>
+                  <p style={{ margin: "0.5rem 0 0", color: "#666" }}>
+                    Meet your mentors and collaborators
+                  </p>
                 </div>
-              </a>
+              </Link>
             </div>
 
             {/* Recent Personality Results */}

@@ -12,9 +12,9 @@ import StudentDashboard from "./pages/student-dashboard.jsx";
 import CoachDashboard from "./pages/coach-dashboard.jsx";
 import Assessment from "./pages/assessment.jsx";
 import AppointmentPage from "./pages/appointment.jsx";
-import CoachSection from "./pages/coachsection.jsx";
 import ProfilePage from "./pages/profile.jsx";
 import ContactUs from "./pages/contactus.jsx";
+import TeamPage from "./pages/teampage.jsx";
 
 
 function App() {
@@ -32,9 +32,9 @@ function App() {
         <Route path="/coach-dashboard" element={<CoachDashboard />} />
         <Route path="/assessment" element={<Assessment />} />
         <Route path="/appointments" element={<AppointmentPage />} />
-        <Route path="/coaches" element={<CoachSection />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/contactus" element={<ContactUs />} />
+        <Route path="/team" element={<TeamPage />} />
       </Routes>
     </Router>
   );
