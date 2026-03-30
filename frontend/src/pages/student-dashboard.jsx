@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; //new
 
+const [assessmentres, setresults] = useState([]);
+
 const formatDateBadge = (dateStr) => {
   const date = new Date(dateStr);
   return {
@@ -19,6 +21,21 @@ function StudentDashboard() {
       setStudentName(parsed.fullName || parsed.name || "Student");
     }
   }, []);
+  useEffect(() => { //new
+  const storedResults = localStorage.getItem("assessmentres");
+  if (storedResults) {
+    const parsed = JSON.parse(storedResults);
+    setresults([
+      {
+        id: 1,
+        name: "Inner Hero",
+        scoreText: parsed.ranking[0].label,
+        summary: parsed.aiSummary.summary,
+        completedOn: new Date().toLocaleDateString(),
+      },
+    ]);
+  }
+}, []);
 
   const coachImages = {
     "Sarah Johnson": "/src/assets/imgs/coach-test.jpg",
@@ -417,14 +434,14 @@ function StudentDashboard() {
 
 
              <p style={{ marginTop: "0", marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
-             {assessmentResults.length > 0
-              ? `You have ${assessmentResults.length} recent assessment result(s).`
+             {assessmentres.length > 0
+              ? `You have ${assessmentres.length} recent assessment result(s).`
               : "No assessment results yet."}
              </p>
 
 
              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {assessmentResults.map((a) => (
+            {assessmentres.map((a) => (
             <div
               key={a.id}
                style={{
@@ -632,6 +649,8 @@ function StudentDashboard() {
                 );
               })}
             </div>
+
+
           </div>
         </div>
       </div>

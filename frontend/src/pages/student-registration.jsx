@@ -49,13 +49,13 @@ function CareerCards({ selected, onSelect }) {
 				<div
 					key={field}
 					style={{
-						border: selected.includes(field) ? "2px solid #7e0f1f" : "1px solid #e6b6bb",
+						border: selected.includes(field) ? "2px solid #121c34" : "1px solid #e6b6bb",
 						borderRadius: "1.1rem",
 						padding: "1rem 1.2rem",
 						minWidth: "110px",
 						textAlign: "center",
 						background: selected.includes(field) ? "#f7c5c8" : "#fff",
-						color: selected.includes(field) ? "#7e0f1f" : "#66111b",
+						color: selected.includes(field) ? "#121c34" : "#1c2740 ",
 						fontWeight: 600,
 						fontSize: "1rem",
 						cursor: "pointer",
@@ -103,7 +103,7 @@ function BioInput({ value, onChange }) {
 				}}
 				placeholder="Write a short bio (max 300 words)"
 			/>
-			<div style={{ fontSize: "0.98rem", color: "#7e0f1f", marginTop: "0.5rem" }}>{wordCount} / 300 words</div>
+			<div style={{ fontSize: "0.98rem", color: "#121c34", marginTop: "0.5rem" }}>{wordCount} / 300 words</div>
 		</div>
 	);
 }
@@ -228,7 +228,7 @@ export default function StudentRegistration() {
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
-				background: "linear-gradient(180deg, #7e0f1f 0%, #b53f4f 52%, #f7c5c8 100%)",
+				background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
 				padding: "2.5rem 1rem 1rem",
 			}}
 		>
@@ -262,11 +262,11 @@ export default function StudentRegistration() {
 						fontWeight: 600,
 						fontSize: "1.15rem",
 						marginBottom: "0.7rem",
-						color: "#7e0f1f"
+						color: "#121c34"
 					}}>{current.question}</div>
 					<div style={{ width: "100%" }}>{current.render(value, handleChange)}</div>
 					{touched && !isValid && (
-						<div style={{ color: "#d32f2f", fontSize: "0.98rem", marginTop: "0.7rem", textAlign: "center" }}>{current.error}</div>
+						<div style={{ color: "#121c34", fontSize: "0.98rem", marginTop: "0.7rem", textAlign: "center" }}>{current.error}</div>
 					)}
 				</div>
 				<div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "1.5rem" }}>
@@ -275,7 +275,7 @@ export default function StudentRegistration() {
 							style={{
 								padding: "0.7rem 1.5rem",
 								background: "#e6b6bb",
-								color: "#66111b",
+								color: "#121c34",
 								border: "none",
 								borderRadius: "999px",
 								fontWeight: 600,
@@ -296,7 +296,7 @@ export default function StudentRegistration() {
 						<button
 							style={{
 								padding: "0.7rem 1.5rem",
-								background: "#7e0f1f",
+								background: "#121c34",
 								color: "#fff",
 								border: "none",
 								borderRadius: "999px",
@@ -317,7 +317,7 @@ export default function StudentRegistration() {
 						<button
 							style={{
 								padding: "0.7rem 1.5rem",
-								background: saving ? "#b53f4f" : saved ? "#4caf50" : "#7e0f1f",
+								background: saving ? "#3f59b5" : saved ? "#4caf50" : "#210f7e",
 								color: "#fff",
 								border: "none",
 								borderRadius: "999px",

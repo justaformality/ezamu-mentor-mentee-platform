@@ -70,7 +70,7 @@ function SignInPage() {
         justifyContent: "center",
         alignItems: "flex-start",
         padding: "2.5rem 2rem 1rem",
-        background: "linear-gradient(180deg, #7e0f1f 0%, #b53f4f 52%, #f7c5c8 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
       }}
     >
       <article
@@ -84,7 +84,7 @@ function SignInPage() {
           border: "1px solid rgba(255,255,255,0.6)",
         }}
       >
-        <h1 style={{ textAlign: "center", margin: "0 0 1.2rem", color: "#66111b" }}>
+        <h1 style={{ textAlign: "center", margin: "0 0 1.2rem", color: "#1c2740" }}>
           Login To Your Account
         </h1>
 
@@ -93,7 +93,7 @@ function SignInPage() {
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         >
-          <label style={{ color: "#5f1f2c", fontSize: "0.95rem" }}>
+          <label style={{ color: "#1c2740 ", fontSize: "0.95rem" }}>
             Email
             <input
               type="email"
@@ -114,7 +114,7 @@ function SignInPage() {
             />
           </label>
 
-          <label style={{ color: "#5f1f2c", fontSize: "0.95rem" }}>
+          <label style={{ color: "#1c2740", fontSize: "0.95rem" }}>
             Password
             <input
               type="password"
@@ -141,9 +141,9 @@ function SignInPage() {
               marginTop: "0.4rem",
               padding: "0.8rem",
               borderRadius: "999px",
-              backgroundColor: "#6e141a",
+              backgroundColor: "#121c34",
               color: "#fff",
-              border: "1px solid #4d0d11",
+              border: "1px solid #121c34",
               fontWeight: 700,
               cursor: "pointer",
             }}
@@ -153,7 +153,7 @@ function SignInPage() {
         </form>
 
         {message && (
-          <p style={{ marginTop: "1rem", textAlign: "center", color: "#55131d" }}>{message}</p>
+          <p style={{ marginTop: "1rem", textAlign: "center", color: "#1c2740 " }}>{message}</p>
         )}
       </article>
     </main>

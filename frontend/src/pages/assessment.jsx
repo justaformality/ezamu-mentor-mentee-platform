@@ -189,7 +189,7 @@ const styles = {
   eyebrow: {
     display: "inline-block",
     background: "#f6d9d1",
-    color: "#7c1828",
+    color: "#1c2740",
     borderRadius: "999px",
     padding: "0.45rem 0.95rem",
     fontSize: "0.95rem",
@@ -200,12 +200,12 @@ const styles = {
   title: {
     fontSize: "3rem",
     margin: "0 0 1rem 0",
-    color: "#5b1d29",
+    color: "#1c2740",
     lineHeight: 1.05,
     fontWeight: 800,
   },
   subtitle: {
-    color: "#6d4750",
+    color: "#1c2740",
     lineHeight: 1.8,
     fontSize: "1.15rem",
     marginBottom: "1.4rem",
@@ -214,12 +214,12 @@ const styles = {
   videoTitle: {
     marginTop: 0,
     marginBottom: "0.5rem",
-    color: "#5b1d29",
+    color: "#1c2740",
     fontSize: "1.9rem",
     fontWeight: 800,
   },
   videoText: {
-    color: "#6d4750",
+    color: "#1c2740",
     lineHeight: 1.75,
     fontSize: "1.05rem",
     marginBottom: "1rem",
@@ -254,26 +254,26 @@ const styles = {
     borderRadius: "999px",
     padding: "0.75rem 1rem",
     fontWeight: 700,
-    color: "#61202b",
+    color: "#1c2740",
     fontSize: "1rem",
   },
   progressTrack: {
     height: "12px",
     width: "100%",
-    background: "#efd6d1",
+    background: "#add",
     borderRadius: "999px",
     overflow: "hidden",
     marginTop: "1.15rem",
   },
   progressFill: {
     height: "100%",
-    background: "linear-gradient(90deg, #8f2031 0%, #b4334b 100%)",
+    background: "linear-gradient(90deg, #1c2740, 40%, #0000cd 100%)",
     transition: "width 0.25s ease",
     borderRadius: "999px",
   },
   progressText: {
     marginTop: "0.95rem",
-    color: "#6c4750",
+    color: "#0000cd",
     fontWeight: 700,
     fontSize: "1.05rem",
   },
@@ -293,7 +293,7 @@ const styles = {
   questionLabel: {
     display: "inline-block",
     background: "#f8ece8",
-    color: "#8b2234",
+    color: "#1c2740",
     borderRadius: "999px",
     padding: "0.42rem 0.85rem",
     fontSize: "0.95rem",
@@ -303,7 +303,7 @@ const styles = {
   questionTitle: {
     marginTop: 0,
     marginBottom: "0.7rem",
-    color: "#5a1d29",
+    color: "#1c2740",
     fontSize: "2rem",
     lineHeight: 1.2,
     fontWeight: 800,
@@ -331,7 +331,7 @@ const styles = {
     boxShadow: "0 4px 14px rgba(91, 29, 41, 0.04)",
   },
   selectedOption: {
-    border: "2px solid #8f2031",
+    border: "2px solid #1c2740",
     background: "#fff1ee",
     boxShadow: "0 10px 24px rgba(143, 32, 49, 0.10)",
   },
@@ -358,19 +358,19 @@ const styles = {
     margin: "0 0 0.65rem 0",
     fontSize: "1.45rem",
     fontWeight: 800,
-    color: "#3f1a22",
+    color: "#121c34",
   },
   rankingDescription: {
     margin: 0,
     fontSize: "1.02rem",
     lineHeight: 1.7,
-    color: "#5f3c45",
+    color: "#121c34",
   },
   selectLabel: {
     display: "block",
     marginBottom: "0.55rem",
     fontWeight: 800,
-    color: "#5b2530",
+    color: "#121c34",
     fontSize: "1.05rem",
   },
   selectInput: {
@@ -379,7 +379,7 @@ const styles = {
     borderRadius: "16px",
     border: "1px solid #dfc9c4",
     fontSize: "1.05rem",
-    color: "#442129",
+    color: "#121c34",
     background: "#fffdfc",
   },
   navRow: {
@@ -402,7 +402,7 @@ const styles = {
   resultHeroTitle: {
     fontSize: "2.3rem",
     margin: "0 0 0.8rem 0",
-    color: "#5b1d29",
+    color: "#1c2740",
     fontWeight: 800,
   },
   resultGrid: {
@@ -763,7 +763,7 @@ function Assessment() {
                   >
                     #{index + 1} {item.label}
                   </p>
-                  <p style={{ margin: "0.5rem 0 0 0", color: "#5b3540", fontSize: "1rem" }}>
+                  <p style={{ margin: "0.5rem 0 0 0", color: "#121c34", fontSize: "1rem" }}>
                     Score: {item.score}
                   </p>
                 </div>
@@ -779,16 +779,16 @@ function Assessment() {
                 border: "1px solid #efd6d1",
               }}
             >
-              <h3 style={{ marginTop: 0, color: "#5b1e2a", fontSize: "1.3rem" }}>
+              <h3 style={{ marginTop: 0, color: "#1c2740", fontSize: "1.3rem" }}>
                 AI Insight Summary
               </h3>
-              <ul style={{ color: "#65424a", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
+              <ul style={{ color: "#121c34", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
                 {results.aiSummary.strengths.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
 
-              <h3 style={{ color: "#5b1e2a", fontSize: "1.3rem" }}>Suggested Next Steps</h3>
+              <h3 style={{ color: "#1c2740", fontSize: "1.3rem" }}>Suggested Next Steps</h3>
               <ul style={{ color: "#65424a", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
                 {results.aiSummary.nextSteps.map((item) => (
                   <li key={item}>{item}</li>
@@ -818,7 +818,7 @@ function Assessment() {
                   ...styles.button,
                   background: "#fff",
                   border: "1px solid #d7b7b1",
-                  color: "#5d1f2a",
+                  color: "#1c2740 ",
                 }}
               >
                 Retake Assessment
@@ -828,7 +828,7 @@ function Assessment() {
                 onClick={() => (window.location.href = "/signup")}
                 style={{
                   ...styles.button,
-                  background: "#8f2031",
+                  background: "#1c2740",
                   color: "#fff",
                 }}
               >
@@ -906,7 +906,7 @@ function Assessment() {
               style={{
                 ...styles.button,
                 background: currentStep === 0 ? "#eee" : "#fff",
-                color: currentStep === 0 ? "#999" : "#5a1d29",
+                color: currentStep === 0 ? "#999" : "#1c2740",
                 border: "1px solid #dec4bf",
               }}
             >
@@ -919,7 +919,7 @@ function Assessment() {
               disabled={!canGoNext}
               style={{
                 ...styles.button,
-                background: canGoNext ? "#8f2031" : "#d4b7bc",
+                background: canGoNext ? "#1c2740" : "#d4b7bc",
                 color: "#fff",
               }}
             >

@@ -118,19 +118,19 @@ function LandingPage() {
                 step: "STEP 1",
                 title: "Share your background",
                 description:
-                  "Tell us who you are. Share your interests, goals, and current status so we can personalize your plan.",
+                  "Tell us who you are. Share your interests, goals, and current education status so we can personalize your plan. Don't worry, we won't judge your choices, we just want to help.",
               },
               {
                 step: "STEP 2",
                 title: "Book an appointment",
                 description:
-                  "Book an appointment with suggested coaches and peers who understand your background so you’re never planning alone.",
+                  "Book an appointment with our personal coaches and some of your peers who understand you, and your goals.",
               },
               {
                 step: "STEP 3",
                 title: "Track progress",
                 description:
-                  "Work through clear actionable goals, scholarship searches, and application milestones with regular check-ins.",
+                  "Work through clear actionable goals, scholarship searches, and application milestones with regular check-ins with your mentors.",
               },
             ].map((item) => (
               <div
@@ -144,9 +144,9 @@ function LandingPage() {
                   boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
                 }}
               >
-                <small style={{ color: "#b33c47", fontWeight: 700 }}>{item.step}</small>
-                <h3 style={{ margin: "0.45rem 0", color: "#51121d" }}>{item.title}</h3>
-                <p style={{ color: "#4b2d33", lineHeight: 1.6 }}>{item.description}</p>
+                <small style={{ color: "#121c34", fontWeight: 700 }}>{item.step}</small>
+                <h3 style={{ margin: "0.45rem 0", color: "#211251" }}>{item.title}</h3>
+                <p style={{ color: "#392d4b", lineHeight: 1.6 }}>{item.description}</p>
               </div>
             ))}
           </div>
@@ -185,10 +185,10 @@ function LandingPage() {
                   border: "1px solid rgba(255,255,255,0.7)",
                 }}
               >
-                <p style={{ margin: "0 0 0.75rem", fontStyle: "italic", color: "#512128" }}>
+                <p style={{ margin: "0 0 0.75rem", fontStyle: "italic", color: "#2b2151" }}>
                   {item.quote}
                 </p>
-                <p style={{ margin: 0, fontWeight: 700, color: "#4f2b34" }}>{item.author}</p>
+                <p style={{ margin: 0, fontWeight: 700, color: "#322b4f" }}>{item.author}</p>
               </div>
             ))}
           </div>
@@ -207,6 +207,9 @@ function LandingPage() {
           <h2 style={{ color: "#fff", fontSize: "1.9rem", marginBottom: "0.8rem" }}>
             Ready To Start Planning Your Career Path?
           </h2>
+          <h3 style={{ color: "#fff", fontSize: "1.0rem", marginBottom: "0.8rem" }}>
+            Join us to find what your future holds. 
+          </h3>
           <Link
             to="/signup"
             style={{

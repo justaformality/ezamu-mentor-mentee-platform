@@ -75,7 +75,7 @@ function StudentInfo() {
         display: "flex",
         justifyContent: "center",
         padding: "1.5rem 1rem 2.5rem",
-        background: "linear-gradient(180deg, #7b232c 0%, #e9b6b6 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #e9b6b6 100%)",
       }}
     >
       <div style={{ maxWidth: "1000px", width: "100%" }}>
@@ -106,7 +106,7 @@ function StudentInfo() {
             onClick={() => navigate("/coach-dashboard")}
             style={{
               background: "#fff",
-              color: "#7b232c",
+              color: "#121c34",
               border: "none",
               borderRadius: 10,
               padding: "0.75rem 1.1rem",
@@ -142,12 +142,12 @@ function StudentInfo() {
           {loading ? (
             <p style={{ color: "#666", margin: 0 }}>Loading student details...</p>
           ) : error ? (
-            <p style={{ color: "#b00020", margin: 0 }}>{error}</p>
+            <p style={{ color: "#121c34", margin: 0 }}>{error}</p>
           ) : student ? (
             <div>
               <div
                 style={{
-                  color: "#7b232c",
+                  color: "#121c34",
                   fontWeight: 700,
                   fontSize: 28,
                   marginBottom: 18,
@@ -167,7 +167,7 @@ function StudentInfo() {
               <div style={{ marginBottom: 22 }}>
                 <div
                   style={{
-                    color: "#7b232c",
+                    color: "#121c34",
                     fontWeight: 600,
                     fontSize: 17,
                     marginBottom: 8,
@@ -183,7 +183,7 @@ function StudentInfo() {
               <div style={{ marginBottom: 22 }}>
                 <div
                   style={{
-                    color: "#7b232c",
+                    color: "#121c34",
                     fontWeight: 600,
                     fontSize: 17,
                     marginBottom: 8,
@@ -199,7 +199,7 @@ function StudentInfo() {
                         key={`${student.id}-goal-${index}`}
                         style={{
                           background: "#f6e2e4",
-                          color: "#7b232c",
+                          color: "#121c34",
                           padding: "0.45rem 0.8rem",
                           borderRadius: 999,
                           fontSize: 14,
@@ -218,7 +218,7 @@ function StudentInfo() {
               <div>
                 <div
                   style={{
-                    color: "#7b232c",
+                    color: "#121c34",
                     fontWeight: 600,
                     fontSize: 17,
                     marginBottom: 8,

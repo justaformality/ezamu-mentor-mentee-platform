@@ -471,9 +471,9 @@ export default function CoachAppointments() {
                     style={{
                       padding: "0.6rem 0.9rem",
                       borderRadius: "10px",
-                      border: "1px solid #f44336",
+                      border: "1px solid #121c34",
                       background: "#fff5f5",
-                      color: "#f44336",
+                      color: "#121c34",
                       cursor: "pointer",
                       fontWeight: 800,
                     }}

@@ -328,7 +328,7 @@ function CoachDashboard() {
         display: "flex",
         justifyContent: "center",
         padding: "1.5rem 1rem 2.5rem",
-        background: "linear-gradient(180deg, #7b232c 0%, #e9b6b6 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
       }}
     >
       <div style={{ maxWidth: "1200px", width: "100%" }}>
@@ -371,7 +371,7 @@ function CoachDashboard() {
           >
             <span
               style={{
-                color: "#7b232c",
+                color: "#1c2740",
                 fontWeight: 600,
                 fontSize: 22,
                 marginBottom: 24,
@@ -450,7 +450,7 @@ function CoachDashboard() {
                     >
                       {appt.name}
                     </div>
-                    <div style={{ color: "#7b232c", fontSize: 13, marginBottom: 1 }}>
+                    <div style={{ color: "#1c2740", fontSize: 13, marginBottom: 1 }}>
                       {appt.date} at {appt.time}
                     </div>
                     <div style={{ color: "#888", fontSize: 13 }}>{appt.duration}</div>
@@ -477,7 +477,7 @@ function CoachDashboard() {
           >
             <span
               style={{
-                color: "#7b232c",
+                color: "#1c2740",
                 fontWeight: 600,
                 fontSize: 22,
                 marginBottom: 24,
@@ -494,7 +494,7 @@ function CoachDashboard() {
                 Loading students...
               </p>
             ) : studentsError ? (
-              <p style={{ color: "#b00020", width: "100%", textAlign: "center" }}>
+              <p style={{ color: "#1c2740", width: "100%", textAlign: "center" }}>
                 {studentsError}
               </p>
             ) : students.length === 0 ? (
@@ -512,7 +512,7 @@ function CoachDashboard() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      color: "#7b232c",
+                      color: "#1c2740 ",
                       fontWeight: 500,
                       fontSize: 17,
                       borderRadius: 10,

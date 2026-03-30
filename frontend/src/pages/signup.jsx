@@ -87,7 +87,7 @@ function SignUpPage() {
         justifyContent: "center",
         alignItems: "flex-start",
         padding: "2.5rem 2rem 1rem",
-        background: "linear-gradient(180deg, #7e0f1f 0%, #b53f4f 52%, #f7c5c8 100%)",
+        background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
       }}
     >
       <article
@@ -102,7 +102,7 @@ function SignUpPage() {
           border: "1px solid rgba(255,255,255,0.62)",
         }}
       >
-        <h1 style={{ textAlign: "center", margin: "0 0 1rem", color: "#66111b" }}>
+        <h1 style={{ textAlign: "center", margin: "0 0 1rem", color: "#1c2740 " }}>
           Create an Account
         </h1>
         <p style={{ marginBottom: "1.25rem", textAlign: "center", color: "#5f1f2c" }}>
@@ -226,7 +226,7 @@ function SignUpPage() {
           style={{
             marginTop: "0.5rem",
             padding: "0.75rem",
-            backgroundColor: isLoading ? "#ccc" : "#5f1f2c",
+            backgroundColor: isLoading ? "#ccc" : "#1c2740 ",
             color: "white",
             border: "none",
             borderRadius: "0.4rem",

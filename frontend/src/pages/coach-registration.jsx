@@ -69,7 +69,7 @@ function FieldsInput({ value, onChange }) {
 					type="button"
 					style={{
 						padding: "0.65rem 1.2rem",
-						background: "#7e0f1f",
+						background: "#1c2740",
 						color: "#fff",
 						border: "none",
 						borderRadius: "999px",
@@ -92,7 +92,7 @@ function FieldsInput({ value, onChange }) {
 								alignItems: "center",
 								gap: "0.4rem",
 								background: "#f7c5c8",
-								border: "2px solid #7e0f1f",
+								border: "2px solid #1c2740 ",
 								borderRadius: "999px",
 								padding: "0.35rem 0.9rem",
 								color: "#7e0f1f",
@@ -108,7 +108,7 @@ function FieldsInput({ value, onChange }) {
 									background: "none",
 									border: "none",
 									cursor: "pointer",
-									color: "#7e0f1f",
+									color: "#1c2740 ",
 									fontSize: "1rem",
 									lineHeight: 1,
 									padding: 0
@@ -151,7 +151,7 @@ function BioInput({ value, onChange }) {
 				}}
 				placeholder="Write a short bio for students (max 300 words)"
 			/>
-			<div style={{ fontSize: "0.98rem", color: "#7e0f1f", marginTop: "0.5rem" }}>{wordCount} / 300 words</div>
+			<div style={{ fontSize: "0.98rem", color: "#1c2740", marginTop: "0.5rem" }}>{wordCount} / 300 words</div>
 		</div>
 	);
 }
@@ -227,7 +227,7 @@ export default function CoachRegistration() {
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
-				background: "linear-gradient(180deg, #7e0f1f 0%, #b53f4f 52%, #f7c5c8 100%)",
+				background: "linear-gradient(180deg, #121c34 0%, #3131d8 40%, #add8e6 100%)",
 				padding: "2.5rem 1rem 1rem",
 			}}
 		>
@@ -265,7 +265,7 @@ export default function CoachRegistration() {
 					}}>{current.question}</div>
 					<div style={{ width: "100%" }}>{current.render(value, handleChange)}</div>
 					{touched && !isValid && (
-						<div style={{ color: "#d32f2f", fontSize: "0.98rem", marginTop: "0.7rem", textAlign: "center" }}>{current.error}</div>
+						<div style={{ color: "#121c34", fontSize: "0.98rem", marginTop: "0.7rem", textAlign: "center" }}>{current.error}</div>
 					)}
 				</div>
 				<div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "1.5rem" }}>
@@ -274,7 +274,7 @@ export default function CoachRegistration() {
 							style={{
 								padding: "0.7rem 1.5rem",
 								background: "#e6b6bb",
-								color: "#66111b",
+								color: "#121c34",
 								border: "none",
 								borderRadius: "999px",
 								fontWeight: 600,
@@ -295,7 +295,7 @@ export default function CoachRegistration() {
 						<button
 							style={{
 								padding: "0.7rem 1.5rem",
-								background: "#7e0f1f",
+								background: "#121c34",
 								color: "#fff",
 								border: "none",
 								borderRadius: "999px",
@@ -316,7 +316,7 @@ export default function CoachRegistration() {
 						<button
 							style={{
 								padding: "0.7rem 1.5rem",
-								background: saving ? "#b53f4f" : saved ? "#4caf50" : "#7e0f1f",
+								background: saving ? "#add8e6" : saved ? "#4caf50" : "#7e0f1f",
 								color: "#fff",
 								border: "none",
 								borderRadius: "999px",

@@ -667,7 +667,7 @@ function CoachDashboard() {
                         <button
                           onClick={() => handleDeleteItem(item.id)}
                           style={{
-                            backgroundColor: "#ff6b6b",
+                            backgroundColor: "#0000cd",
                             color: "#fff",
                             border: "none",
                             borderRadius: "4px",
