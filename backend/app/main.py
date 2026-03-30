@@ -55,6 +55,10 @@ class User(Base):
     student_goals_json = Column(String, nullable=True)   # store list as JSON string
     student_age = Column(String, nullable=True)
 
+    coach_bio = Column(String, nullable=True)
+    coach_expertise_json = Column(String, nullable=True)
+    coach_age = Column(String, nullable=True)
+
 class Appointment(Base):
     __tablename__ = "appointments"
 
@@ -142,7 +146,28 @@ class StudentProfileOut(BaseModel):
     bio: Optional[str] = None
     goals: List[str] = Field(default_factory=list)
 
+class CoachProfileIn(BaseModel):
+    age: Optional[str] = None
+    bio: Optional[str] = None
+    expertise: List[str] = Field(default_factory=list)
+
+class CoachProfileOut(BaseModel):
+    user_id: int
+    fullName: Optional[str] = None
+    age: Optional[str] = None
+    bio: Optional[str] = None
+    expertise: List[str] = Field(default_factory=list)
+
 class CoachStudentDetailOut(BaseModel):
+    id: int
+    fullName: Optional[str] = None
+    email: EmailStr
+    age: Optional[str] = None
+    bio: Optional[str] = None
+    goals: List[str] = Field(default_factory=list)
+    action_items: List[Dict[str, Any]]
+
+class PeerStudentDetailOut(BaseModel):
     id: int
     fullName: Optional[str] = None
     email: EmailStr
@@ -956,6 +981,27 @@ def save_student_profile(student_id: int, data: StudentProfileIn, db: Session = 
         goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
     )
 
+@app.post("/coaches/{coach_id}/profile", response_model=CoachProfileOut)
+def save_coach_profile(coach_id: int, data: CoachProfileIn, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    coach.coach_age = data.age
+    coach.coach_bio = data.bio
+    coach.coach_expertise_json = json.dumps(data.expertise)
+
+    db.commit()
+    db.refresh(coach)
+
+    return CoachProfileOut(
+        user_id=coach.id,
+        fullName=coach.fullName,
+        age=coach.coach_age,
+        bio=coach.coach_bio,
+        expertise=json.loads(coach.coach_expertise_json) if coach.coach_expertise_json else [],
+    )
+
 @app.get("/students/{student_id}/profile", response_model=StudentProfileOut)
 def get_student_profile(student_id: int, db: Session = Depends(get_db)):
     student = db.query(User).filter(User.id == student_id, User.role == "student").first()
@@ -968,6 +1014,20 @@ def get_student_profile(student_id: int, db: Session = Depends(get_db)):
         age=student.student_age,
         bio=student.student_bio,
         goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+    )
+
+@app.get("/coaches/{coach_id}/profile", response_model=CoachProfileOut)
+def get_coach_profile(coach_id: int, db: Session = Depends(get_db)):
+    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    return CoachProfileOut(
+        user_id=coach.id,
+        fullName=coach.fullName,
+        age=coach.coach_age,
+        bio=coach.coach_bio,
+        expertise=json.loads(coach.coach_expertise_json) if coach.coach_expertise_json else [],
     )
 
 @app.get("/students/{student_id}/parent")
@@ -1136,6 +1196,36 @@ def get_coach_student_detail(coach_id: int, student_id: int, db: Session = Depen
                 "completed": ai.completed,
             }
             for ai in student.action_items
+        ],
+    )
+
+@app.get("/peers/{peer_id}/students/{student_id}", response_model=PeerStudentDetailOut)
+def get_peer_student_detail(peer_id: int, student_id: int, db: Session = Depends(get_db)):
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    if not peer:
+        raise HTTPException(status_code=404, detail="Peer not found")
+
+    if peer.peerID != student_id:
+        raise HTTPException(status_code=403, detail="Student is not assigned to this peer")
+    
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    return PeerStudentDetailOut(
+        id=student.id,
+        fullName=student.fullName,
+        email=student.email,
+        age=student.student_age,
+        bio=student.student_bio,
+        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+        action_items=[
+            {
+                "id": ai.id,
+                "description": ai.description,
+                "completed": ai.completed,
+            }
+             for ai in student.action_items
         ],
     )
 
