@@ -32,7 +32,7 @@ function LandingPage() {
           {/*the hook section of the page*/}
           <div style={{ flex: "1 1 420px", minWidth: "300px" }}>
             <h1 style={{ fontSize: "2.4rem", color: "#fff", lineHeight: 1.15, marginBottom: "1rem" }}>
-              Ezamu: The All-In-One College Mentorship Platform
+              Ezamu: The All-In-One Mentorship Platform
             </h1>
             <p style={{ fontSize: "1.05rem", color: "#fcf0f0", lineHeight: 1.6, maxWidth: "520px" }}>
               Connect with verified mentors, counselors, and peers to discover majors, explore careers, and build a plan for life after high school — all in one place.
