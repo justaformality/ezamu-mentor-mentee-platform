@@ -4,7 +4,7 @@ import os
 import json
 import shutil
 
-from datetime import datetime, timezone, date, time
+from datetime import datetime, timezone, date, time, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -76,6 +76,7 @@ class ActionItem(Base):
 
     id = Column(Integer, primary_key = True, index = True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String, nullable = False, default = "Untitled Task")
     description = Column(String, nullable = False)
     completed = Column(Boolean, default = False)
 
@@ -262,7 +263,6 @@ class ArchetypeIn(BaseModel):
 class AvailabilityIn(BaseModel):
     date: str # YYYY-MM-DD
     start_time: str # HH:MM
-    end_time: str # HH:MM
 
 class AvailabilityOut(BaseModel):
     id: int
@@ -290,11 +290,13 @@ class AssessmentResponseOut(BaseModel):
     submitted_at: str
 
 class ActionItemCreate(BaseModel):
+    title: str
     description: str
 
 class ActionItemOut(BaseModel):
     id: int
     user_id: int
+    title: str
     description: str
     completed: bool
 
@@ -439,7 +441,7 @@ def get_action_items(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code = 404, detail = "User not found")
     
     return [
-        {"id": ai.id, "description": ai.description, "completed": ai.completed}
+        {"id": ai.id, "title": ai.title, "description": ai.description, "completed": ai.completed}
         for ai in user.action_items
     ]
 
@@ -589,6 +591,7 @@ def get_parent_student_progress(parent_id: int, student_id: int, db: Session = D
         "action_items": [
             {
                 "id": ai.id,
+                "title": ai.title,
                 "description": ai.description,
                 "completed": ai.completed
             }
@@ -1154,6 +1157,7 @@ def get_student_action_items(coach_id: int, student_id: int, db: Session = Depen
     return [
         {
             "id": ai.id,
+            "title": ai.title,
             "description": ai.description,
             "completed": ai.completed
         }
@@ -1192,6 +1196,7 @@ def get_coach_student_detail(coach_id: int, student_id: int, db: Session = Depen
         action_items=[
             {
                 "id": ai.id,
+                "title": ai.title,
                 "description": ai.description,
                 "completed": ai.completed,
             }
@@ -1222,6 +1227,7 @@ def get_peer_student_detail(peer_id: int, student_id: int, db: Session = Depends
         action_items=[
             {
                 "id": ai.id,
+                "title": ai.title,
                 "description": ai.description,
                 "completed": ai.completed,
             }
@@ -1237,13 +1243,23 @@ def add_availability(coach_id: int, slot: AvailabilityIn, db: Session = Depends(
     try:  
         parsed_date = datetime.strptime(slot.date, "%Y-%m-%d").date()
         parsed_start = datetime.strptime(slot.start_time, "%H:%M").time()
-        parsed_end = datetime.strptime(slot.end_time, "%H:%M").time()
     except ValueError:
         raise HTTPException(status_code=400, detail = "Invalid date or time format") 
     
-    if parsed_start >= parsed_end:
-        raise HTTPException(status_code = 400, detail = "Start time must be before end time")
+    if parsed_start.minute != 0:
+        raise HTTPException(status_code = 400, detail = "Availability must start on the hour (e.g. 14:00)")
     
+    parsed_end = (datetime.combine(parsed_date, parsed_start) + timedelta(hours=1)).time()
+
+    exists = db.query(CoachAvailability).filter(
+        CoachAvailability.coach_id == coach_id,
+        CoachAvailability.date == parsed_date,
+        CoachAvailability.start_time == parsed_start
+    ).first()
+
+    if exists:
+        raise HTTPException(status_code=400, detail="Availability already exists")
+
     appointment_slot = CoachAvailability(
         coach_id = coach_id,
         date = parsed_date,
@@ -1323,6 +1339,7 @@ def create_student_action_item(coach_id: int, student_id: int, data: ActionItemC
 
     item = ActionItem(
         user_id=student_id,
+        title=data.title,
         description=data.description,
         completed=False
     )
@@ -1333,6 +1350,7 @@ def create_student_action_item(coach_id: int, student_id: int, data: ActionItemC
     return ActionItemOut(
         id=item.id,
         user_id=item.user_id,
+        title=item.title,
         description=item.description,
         completed=item.completed
     )
