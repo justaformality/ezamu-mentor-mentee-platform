@@ -1323,6 +1323,37 @@ def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
         for coach in available_coaches
     ]
 
+@app.get("/peers/filter")
+def filter_peers(goal: str, student_id: int, db: Session = Depends(get_db)):
+        check_student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+        if not check_student:
+            raise HTTPException(status_code=403, detail="Only students can filter peers")
+
+        students = db.query(User).filter(
+            User.role == "student",
+            User.id != student_id
+        ).all()
+
+        matching = []
+        for s in students:
+            try:
+                goals = json.loads(s.student_goals_json)
+                if goal in goals:
+                    matching.append(s)
+            except (TypeError, ValueError):
+                continue
+
+        return [
+            {
+                "id": s.id,
+                "email": s.email,
+                "fullName": s.fullName,
+                "goals": json.loads(s.student_goals_json)
+            }
+            for s in matching
+        ]
+
+
 @app.post("/coaches/{coach_id}/students/{student_id}/action_items", response_model=ActionItemOut, status_code=201)
 def create_student_action_item(coach_id: int, student_id: int, data: ActionItemCreate, db: Session = Depends(get_db)):
     coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
