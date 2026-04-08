@@ -17,6 +17,7 @@ import ContactUs from "./pages/contactus.jsx";
 import TeamPage from "./pages/teampage.jsx";
 import StudentInfo from "./pages/student-info.jsx";
 import ParentDashboard from "./pages/parent-dashbaord.jsx";
+import SmartGoals from "./pages/smartgoals.jsx";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route path="/team" element={<TeamPage />} />
         <Route path="/student-info/:studentId" element={<StudentInfo />} />
         <Route path="/parent-dashboard" element={<ParentDashboard />} />
+        <Route path="/smartgoals" element={<SmartGoals />} />
       </Routes>
     </Router>
   );

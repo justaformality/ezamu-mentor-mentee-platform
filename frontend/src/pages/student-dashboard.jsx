@@ -379,8 +379,8 @@ function StudentDashboard() {
 
             {/* Quick Access Tiles */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
-              <a
-                href="/broken-link"
+              <Link
+                to="/smartgoals"
                 style={{
                   textDecoration: "none",
                   color: "inherit",
@@ -406,8 +406,7 @@ function StudentDashboard() {
                   </div>
                   <p style={{ margin: "0.5rem 0 0", color: "#666" }}>View your goal strategy and progress</p>
                 </div>
-              </a>
-
+            </Link>
               <Link
                 to="/team"
                 style={{
@@ -440,7 +439,7 @@ function StudentDashboard() {
                     Meet your mentors and collaborators
                   </p>
                 </div>
-              </Link>
+            </Link>
             </div>
 
             {/* Assessment Results */}
