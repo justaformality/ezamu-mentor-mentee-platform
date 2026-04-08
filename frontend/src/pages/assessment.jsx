@@ -418,6 +418,19 @@ const styles = {
     borderRadius: "18px",
     padding: "1.1rem",
   },
+  resultBarTrack: {
+    width: "100%",
+    height: "10px",
+    borderRadius: "999px",
+    background: "#d9edf5",
+    overflow: "hidden",
+    marginTop: "0.75rem",
+  },
+  resultBarFill: {
+    height: "100%",
+    borderRadius: "999px",
+    background: "#1c2740",
+  },
 };
 
 function getInitialResponses() {
@@ -459,13 +472,33 @@ function calculateResults(responses) {
     }
   });
 
+  const totalScore = Object.values(scores).reduce((sum, value) => sum + value, 0);
+
+  const percentages = Object.fromEntries(
+    Object.entries(scores).map(([key, value]) => [
+      key,
+      totalScore ? Math.round((value / totalScore) * 100) : 0,
+    ])
+  );
+
+  const roundedTotal = Object.values(percentages).reduce((sum, value) => sum + value, 0);
+
+  if (roundedTotal !== 100) {
+    const highestKey = Object.entries(percentages).sort((a, b) => b[1] - a[1])[0][0];
+    percentages[highestKey] += 100 - roundedTotal;
+  }
+
   const ranking = Object.entries(scores)
     .map(([key, value]) => ({
       key,
       score: value,
+      percentage: percentages[key],
       ...HEROES[key],
     }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.label.localeCompare(b.label);
+    });
 
   const topHero = ranking[0];
   const secondHero = ranking[1];
@@ -474,12 +507,15 @@ function calculateResults(responses) {
 
   return {
     scores,
+    percentages,
     ranking,
     aiSummary,
   };
 }
 
 function generateAiSummary(topHero, secondHero, ranking) {
+  const lowestHero = ranking[ranking.length - 1];
+
   const pathwayMap = {
     thinker: "innovation, engineering, research, strategy, or data-driven careers",
     helper: "coaching, teaching, counseling, communication, or service-driven careers",
@@ -494,12 +530,23 @@ function generateAiSummary(topHero, secondHero, ranking) {
     doer: "You learn best by trying things and building confidence through action.",
   };
 
+  const growthMap = {
+    thinker:
+      "Keep building your action side so your strong ideas keep turning into real progress.",
+    helper:
+      "Keep building boundaries and structure so you can support others without losing yourself.",
+    planner:
+      "Keep building flexibility so unexpected changes feel easier to handle with confidence.",
+    doer:
+      "Keep building patience and reflection so quick action stays balanced with strong decision-making.",
+  };
+
   return {
     headline: `${topHero.label} first, ${secondHero.label} second`,
-    summary: `Your results suggest you lead most strongly with ${topHero.label} energy, with ${secondHero.label} as a strong secondary strength. That means you may feel most motivated in environments that align with ${pathwayMap[topHero.key]}.`,
+    summary: `Your results suggest you lead most strongly with ${topHero.label} energy at ${topHero.percentage}%, with ${secondHero.label} as your next strongest Inner Hero at ${secondHero.percentage}%. That means you may feel most motivated in environments that align with ${pathwayMap[topHero.key]}.`,
     strengths: [
-      `Top strength: ${topHero.description}`,
-      `Secondary strength: ${secondHero.description}`,
+      `Top Inner Hero: ${topHero.label} (${topHero.percentage}%)`,
+      `Secondary Inner Hero: ${secondHero.label} (${secondHero.percentage}%)`,
       learningStyleMap[topHero.key],
     ],
     nextSteps: [
@@ -507,17 +554,18 @@ function generateAiSummary(topHero, secondHero, ranking) {
       "Book time with a mentor who matches your top strength profile.",
       "Use your results to build a college and career roadmap inside Ezamu.",
     ],
+    growthArea: `Your lowest-scoring Inner Hero right now is ${lowestHero.label} at ${lowestHero.percentage}%, which may be a good area to strengthen over time. ${growthMap[lowestHero.key]}`,
     marketingBlurb:
       "Ezamu can use this profile to recommend mentors, pathway content, and action steps that fit how you naturally think, work, and grow.",
     rankingText: ranking
-      .map((item, index) => `${index + 1}. ${item.label} (${item.score})`)
+      .map((item, index) => `${index + 1}. ${item.label} (${item.percentage}%)`)
       .join(" • "),
   };
 }
 
 function formatArchetypeSummary(results) {
   return (results?.ranking || [])
-    .map((item) => `${item.label}${item.score}`)
+    .map((item) => `${item.label}${item.percentage}`)
     .join("_");
 }
 
@@ -606,8 +654,6 @@ function Assessment() {
   };
 
   const handleSubmit = async () => {
-    const finalResults = calculateResults(responses);
-
     setSubmitted(true);
   };
 
@@ -623,6 +669,7 @@ function Assessment() {
     try {
       const user = JSON.parse(storedUser);
       const archetypeSummary = formatArchetypeSummary(results);
+
       if (!archetypeSummary) {
         setSaveMessage("Could not determine results to save.");
         return;
@@ -768,6 +815,7 @@ function Assessment() {
   if (submitted && results) {
     const top = results.ranking[0];
     let isLoggedIn = false;
+
     try {
       isLoggedIn = !!JSON.parse(localStorage.getItem("user") || "null")?.id;
     } catch {
@@ -779,7 +827,7 @@ function Assessment() {
         <div style={styles.shell}>
           <section style={styles.questionCard}>
             <div style={styles.eyebrow}>Assessment Complete</div>
-            <h1 style={styles.resultHeroTitle}>Your top Inner Hero is {top.label}</h1>
+            <h1 style={styles.resultHeroTitle}>You lead with {top.label} energy</h1>
             <p style={styles.subtitle}>{results.aiSummary.summary}</p>
 
             <div style={styles.resultGrid}>
@@ -801,12 +849,41 @@ function Assessment() {
                   >
                     #{index + 1} {item.label}
                   </p>
-                  <p style={{ margin: "0.5rem 0 0 0", color: "#121c34", fontSize: "1rem" }}>
-                    Score: {item.score}
+
+                  <p
+                    style={{
+                      margin: "0.5rem 0 0 0",
+                      color: "#121c34",
+                      fontSize: "1rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item.percentage}% of your profile
                   </p>
+
+                  <div style={styles.resultBarTrack}>
+                    <div
+                      style={{
+                        ...styles.resultBarFill,
+                        width: `${item.percentage}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
+
+            <p
+              style={{
+                marginTop: "1rem",
+                color: "#1c2740",
+                fontSize: "1rem",
+                fontWeight: 700,
+              }}
+            >
+              Total profile breakdown:{" "}
+              {results.ranking.reduce((sum, item) => sum + item.percentage, 0)}%
+            </p>
 
             <div
               style={{
@@ -820,20 +897,55 @@ function Assessment() {
               <h3 style={{ marginTop: 0, color: "#1c2740", fontSize: "1.3rem" }}>
                 AI Insight Summary
               </h3>
-              <ul style={{ color: "#121c34", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
+
+              <ul
+                style={{
+                  color: "#121c34",
+                  lineHeight: 1.8,
+                  paddingLeft: "1.2rem",
+                  fontSize: "1rem",
+                }}
+              >
                 {results.aiSummary.strengths.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
 
               <h3 style={{ color: "#1c2740", fontSize: "1.3rem" }}>Suggested Next Steps</h3>
-              <ul style={{ color: "#1c2740", lineHeight: 1.8, paddingLeft: "1.2rem", fontSize: "1rem" }}>
+
+              <ul
+                style={{
+                  color: "#1c2740",
+                  lineHeight: 1.8,
+                  paddingLeft: "1.2rem",
+                  fontSize: "1rem",
+                }}
+              >
                 {results.aiSummary.nextSteps.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
 
-              <p style={{ marginTop: "1rem", color: "#1c2740", fontSize: "1rem", lineHeight: 1.7 }}>
+              <h3 style={{ color: "#1c2740", fontSize: "1.3rem" }}>Growth Area</h3>
+              <p
+                style={{
+                  marginTop: "0.5rem",
+                  color: "#1c2740",
+                  fontSize: "1rem",
+                  lineHeight: 1.7,
+                }}
+              >
+                {results.aiSummary.growthArea}
+              </p>
+
+              <p
+                style={{
+                  marginTop: "1rem",
+                  color: "#1c2740",
+                  fontSize: "1rem",
+                  lineHeight: 1.7,
+                }}
+              >
                 <strong>How Ezamu uses this:</strong> {results.aiSummary.marketingBlurb}
               </p>
             </div>
@@ -857,7 +969,7 @@ function Assessment() {
                   ...styles.button,
                   background: "#fff",
                   border: "1px solid #add8e6",
-                  color: "#1c2740 ",
+                  color: "#1c2740",
                 }}
               >
                 Retake Assessment
@@ -889,7 +1001,9 @@ function Assessment() {
             </div>
 
             {saveMessage && (
-              <p style={{ marginTop: "0.9rem", color: "#1c2740", fontWeight: 600 }}>{saveMessage}</p>
+              <p style={{ marginTop: "0.9rem", color: "#1c2740", fontWeight: 600 }}>
+                {saveMessage}
+              </p>
             )}
           </section>
         </div>
