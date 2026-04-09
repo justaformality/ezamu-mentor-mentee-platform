@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean, Table
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean, Table, UniqueConstraint
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
@@ -92,6 +92,9 @@ class CoachAvailability(Base):
     end_time = Column(Time, nullable = False)
 
     coach = relationship("User", backref="availability_slots")
+
+    __table_args__ = (UniqueConstraint('coach_id', 'date', 'start_time'),)
+
 
 class ChangeEmailIn(BaseModel):
     new_email: EmailStr
@@ -668,8 +671,8 @@ def assign_parent(student_id: int, parent_id: int, db: Session = Depends(get_db)
 
 @app.post("/students/{student_id}/assign_peer/{peer_id}")
 def assign_peer(student_id: int, peer_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
-    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    student = db.query(User).filter(User.id == student_id, User.role == "student").with_for_update().first()
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").with_for_update().first()
     if not student:
         raise HTTPException(status_code = 404, detail = "Student not found")
     if not peer:
@@ -708,8 +711,8 @@ def assign_peer_by_staff(student_id: int, peer_id: int, actor_id: int, db: Sessi
     if actor.role not in {"coach", "admin"}:
         raise HTTPException(status_code=403, detail="Only coaches or admins can assign peers")
 
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
-    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    student = db.query(User).filter(User.id == student_id, User.role == "student").with_for_update().first()
+    peer = db.query(User).filter(User.id == peer_id, User.role == "student").with_for_update().first()
 
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -871,7 +874,7 @@ def accept_parent_invite(invite_id: int, parent_id: int, db: Session = Depends(g
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
 
-    invite = db.query(ParentInvite).filter(ParentInvite.id == invite_id).first()
+    invite = db.query(ParentInvite).filter(ParentInvite.id == invite_id).with_for_update().first()
     if not invite:
         raise HTTPException(status_code=404, detail="Invite not found")
 
@@ -1409,6 +1412,7 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
             CoachAvailability.start_time <= requested_time,
             CoachAvailability.end_time > requested_time
         )
+        .with_for_update()
         .first()
     )
 
@@ -1424,7 +1428,6 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
     )
 
     db.add(new_appointment)
-    db.commit()
     db.delete(slot)
     db.commit()
     db.refresh(new_appointment)
