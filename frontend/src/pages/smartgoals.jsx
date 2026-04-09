@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom"; //new 
 
 const STORAGE_KEY = "ezamu_smart_goals";
 
@@ -231,21 +232,42 @@ function getStatus(goal) {
 export default function SmartGoals() {
   const [goalForm, setGoalForm] = useState(createEmptyGoal());
   const [goals, setGoals] = useState([]);
+  const [loaded, setLoaded] = useState(false); //new
+  const [editingGoalId, setEditingGoalId] = useState(null); //new
 
+  const navigate = useNavigate(); //new
+
+  // useEffect(() => {
+  //   const saved = localStorage.getItem(STORAGE_KEY);
+  //   if (saved) {
+  //     try {
+  //       setGoals(JSON.parse(saved));
+  //     } catch (error) {
+  //       console.error("Could not load smart goals:", error);
+  //     }
+  //   }
+  // }, []);
+  //new below this
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setGoals(JSON.parse(saved));
-      } catch (error) {
-        console.error("Could not load smart goals:", error);
-      }
+    try {
+      const savedGoals = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      setGoals(savedGoals);
+    } catch (err) {
+      console.error("Error loading goals:", err);
+      setGoals([]);
+    } finally {
+      setLoaded(true);
     }
   }, []);
 
+  // useEffect(() => {
+  //   localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
+  // }, [goals]);
+  //new
   useEffect(() => {
+    if (!loaded) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
-  }, [goals]);
+  }, [goals, loaded]);
 
   const stats = useMemo(() => {
     const completed = goals.filter((goal) => calculateProgress(goal) === 100).length;
@@ -305,13 +327,53 @@ export default function SmartGoals() {
     }));
   };
 
-  const addGoal = () => {
-    if (!goalForm.title.trim()) return;
+  // const addGoal = () => {
+  //   if (!goalForm.title.trim()) return;
 
-    const cleanedMilestones = goalForm.milestones.filter(
-      (m) => m.text.trim() !== ""
+  //   const cleanedMilestones = goalForm.milestones.filter(
+  //     (m) => m.text.trim() !== ""
+  //   );
+
+  //   const newGoal = {
+  //     id: Date.now(),
+  //     title: goalForm.title.trim(),
+  //     category: goalForm.category,
+  //     deadline: goalForm.deadline,
+  //     why: goalForm.why.trim(),
+  //     specific: goalForm.specific.trim(),
+  //     milestones: cleanedMilestones,
+  //     createdAt: new Date().toISOString(),
+  //   };
+
+  //   setGoals((prev) => [newGoal, ...prev]);
+  //   setGoalForm(createEmptyGoal());
+  // };
+  const addGoal = () => {
+  if (!goalForm.title.trim()) return;
+
+  const cleanedMilestones = goalForm.milestones.filter(
+    (m) => m.text.trim() !== ""
+  );
+
+  if (editingGoalId) {
+    setGoals((prev) =>
+      prev.map((goal) =>
+        goal.id === editingGoalId
+          ? {
+              ...goal,
+              title: goalForm.title.trim(),
+              category: goalForm.category,
+              deadline: goalForm.deadline,
+              why: goalForm.why.trim(),
+              specific: goalForm.specific.trim(),
+              milestones: cleanedMilestones,
+            }
+          : goal
+      )
     );
 
+    setEditingGoalId(null);
+  } else {
     const newGoal = {
       id: Date.now(),
       title: goalForm.title.trim(),
@@ -324,8 +386,10 @@ export default function SmartGoals() {
     };
 
     setGoals((prev) => [newGoal, ...prev]);
-    setGoalForm(createEmptyGoal());
-  };
+  }
+
+  setGoalForm(createEmptyGoal());
+};
 
   const toggleMilestone = (goalId, milestoneId) => {
     setGoals((prev) =>
@@ -346,12 +410,30 @@ export default function SmartGoals() {
     setGoals((prev) => prev.filter((goal) => goal.id !== goalId));
   };
 
+  //new
+  const startEditingGoal = (goal) => {
+    setGoalForm({
+      title: goal.title,
+      category: goal.category,
+      deadline: goal.deadline,
+      why: goal.why,
+      specific: goal.specific,
+      milestones: goal.milestones.length
+        ? goal.milestones
+        : [{ id: Date.now(), text: "", completed: false }],
+    });
+
+    setEditingGoalId(goal.id);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <main style={styles.page}>
       <div style={styles.container}>
         <button
           style={styles.backButton}
-          onClick={() => (window.location.href = "/student-dashboard")}
+          onClick={() => navigate("/student-dashboard")} //onClick={() => (window.location.href = "/student-dashboard")}
         >
           ← Back to Dashboard
         </button>
@@ -472,7 +554,8 @@ export default function SmartGoals() {
 
           <div style={{ marginTop: "1rem" }}>
             <button type="button" style={styles.addButton} onClick={addGoal}>
-              Add Goal
+              {editingGoalId ? "Update Goal" : "Add Goal"}  
+              {/* new line aboove */}
             </button>
           </div>
         </section>
@@ -551,7 +634,24 @@ export default function SmartGoals() {
                       </div>
                     </div>
 
+                    {/* <div style={styles.actionRow}>
+                      <button
+                        type="button"
+                        style={styles.secondaryButton}
+                        onClick={() => deleteGoal(goal.id)}
+                      >
+                        Delete Goal
+                      </button>
+                    </div> */}
                     <div style={styles.actionRow}>
+                      <button
+                        type="button"
+                        style={styles.secondaryButton}
+                        onClick={() => startEditingGoal(goal)}
+                      >
+                        Edit Goal
+                      </button>
+
                       <button
                         type="button"
                         style={styles.secondaryButton}
