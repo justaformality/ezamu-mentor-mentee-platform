@@ -1,51 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const initialAppointments = [
-  {
-    id: 1,
-    student: "Ramona Jones",
-    dateISO: "2026-01-20T15:00:00",
-    durationMins: 45,
-    mode: "Zoom",
-    meetingLink: "https://zoom.us/j/1234567890",
-    status: "Upcoming",
-    focus: "Career exploration + strengths",
-    notes: "Review interests assessment, discuss potential majors and early internship plan.",
-  },
-  {
-    id: 2,
-    student: "Emily Rodriguez",
-    dateISO: "2026-02-12T14:00:00",
-    durationMins: 30,
-    mode: "In-person",
-    meetingLink: "",
-    status: "Upcoming",
-    focus: "Resume feedback",
-    notes: "Bring latest resume draft; focus on bullet impact + quantification.",
-  },
-  {
-    id: 3,
-    student: "Mari Lopez",
-    dateISO: "2026-04-02T15:00:00",
-    durationMins: 45,
-    mode: "Zoom",
-    meetingLink: "https://zoom.us/j/9988776655",
-    status: "Requested",
-    focus: "Interview prep",
-    notes: "Student requested mock interview for internship role.",
-  },
-  {
-    id: 4,
-    student: "Alex Scott",
-    dateISO: "2026-01-05T11:30:00",
-    durationMins: 45,
-    mode: "Zoom",
-    meetingLink: "https://zoom.us/j/5555555555",
-    status: "Completed",
-    focus: "Goal setting",
-    notes: "Set 3 goals for spring semester; follow-up needed on networking outreach.",
-  },
-];
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function formatDateTime(dateISO) {
   const d = new Date(dateISO);
@@ -72,14 +27,71 @@ function statusBadgeStyle(status) {
 }
 
 export default function CoachAppointments() {
-  const [tab, setTab] = useState("Upcoming"); // Upcoming | Completed | Requested | All
+  const [tab, setTab] = useState("Upcoming");
   const [query, setQuery] = useState("");
-  const [modeFilter, setModeFilter] = useState("All"); // All | Zoom | In-person
-  const [statusFilter, setStatusFilter] = useState("All"); // All | Upcoming | Requested | Completed | Canceled
-  const [appointments, setAppointments] = useState(initialAppointments);
+  const [modeFilter, setModeFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  const [selected, setSelected] = useState(null); // appointment object
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [selected, setSelected] = useState(null);
   const [notesDraft, setNotesDraft] = useState("");
+
+  useEffect(() => {
+    async function loadCoachAppointments() {
+      try {
+        const stored = JSON.parse(localStorage.getItem("user") || "null");
+        if (!stored?.id) {
+          setAppointments([]);
+          setLoading(false);
+          return;
+        }
+
+        const [appointmentsRes, studentsRes] = await Promise.all([
+          fetch(`${API_BASE}/users/${stored.id}/appointments`),
+          fetch(`${API_BASE}/coaches/${stored.id}/students`),
+        ]);
+
+        const appointmentsData = await appointmentsRes.json();
+        const studentsData = await studentsRes.json();
+
+        if (!appointmentsRes.ok) {
+          setAppointments([]);
+          setLoading(false);
+          return;
+        }
+
+        const studentMap = {};
+        if (studentsRes.ok && Array.isArray(studentsData)) {
+          studentsData.forEach((student) => {
+            studentMap[student.id] = student.fullName || student.name || student.email || `Student ${student.id}`;
+          });
+        }
+
+        const mapped = (Array.isArray(appointmentsData) ? appointmentsData : []).map((appt) => ({
+          id: appt.id,
+          student: studentMap[appt.student_id] || `Student ${appt.student_id}`,
+          dateISO: appt.scheduledAt,
+          durationMins: 60,
+          mode: "Coaching Session",
+          meetingLink: "",
+          status: "Upcoming",
+          focus: appt.title || "Coaching Session",
+          notes: "",
+        }));
+
+        setAppointments(mapped);
+      } catch (err) {
+        console.error("Failed to load coach appointments:", err);
+        setAppointments([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCoachAppointments();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -117,7 +129,7 @@ export default function CoachAppointments() {
       await navigator.clipboard.writeText(link);
       alert("Meeting link copied!");
     } catch {
-      alert("Could not copy link (browser permissions).");
+      alert("Could not copy link.");
     }
   }
 
@@ -142,7 +154,6 @@ export default function CoachAppointments() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
           {["Upcoming", "Requested", "Completed", "All"].map((t) => (
             <button
@@ -151,9 +162,9 @@ export default function CoachAppointments() {
               style={{
                 padding: "0.55rem 0.9rem",
                 borderRadius: "999px",
-                border: t === tab ? "1px solid #f44336" : "1px solid #eaeaea",
+                border: t === tab ? "1px solid #121c34" : "1px solid #eaeaea",
                 background: t === tab ? "#fff5f5" : "#fff",
-                color: t === tab ? "#f44336" : "#333",
+                color: t === tab ? "#121c34" : "#333",
                 cursor: "pointer",
                 fontWeight: 600,
               }}
@@ -163,7 +174,6 @@ export default function CoachAppointments() {
           ))}
         </div>
 
-        {/* Filters */}
         <div
           style={{
             background: "#fff",
@@ -200,8 +210,7 @@ export default function CoachAppointments() {
             }}
           >
             <option value="All">All modes</option>
-            <option value="Zoom">Zoom</option>
-            <option value="In-person">In-person</option>
+            <option value="Coaching Session">Coaching Session</option>
           </select>
 
           <select
@@ -223,9 +232,12 @@ export default function CoachAppointments() {
           </select>
         </div>
 
-        {/* List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div style={{ padding: "1.25rem", border: "1px solid #eee", borderRadius: "10px", background: "#fff" }}>
+              <p style={{ margin: 0, color: "#666" }}>Loading appointments...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div style={{ padding: "1.25rem", border: "1px solid #eee", borderRadius: "10px", background: "#fff" }}>
               <p style={{ margin: 0, color: "#666" }}>No appointments match your filters.</p>
             </div>
@@ -248,7 +260,6 @@ export default function CoachAppointments() {
                   }}
                 >
                   <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                    {/* Date pill */}
                     <div
                       style={{
                         minWidth: "90px",
@@ -279,7 +290,6 @@ export default function CoachAppointments() {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                     {appt.meetingLink ? (
                       <button
@@ -302,9 +312,9 @@ export default function CoachAppointments() {
                       style={{
                         padding: "0.55rem 0.75rem",
                         borderRadius: "8px",
-                        border: "1px solid #f44336",
+                        border: "1px solid #121c34",
                         background: "#fff5f5",
-                        color: "#f44336",
+                        color: "#121c34",
                         cursor: "pointer",
                         fontWeight: 700,
                       }}
@@ -380,7 +390,6 @@ export default function CoachAppointments() {
           )}
         </div>
 
-        {/* Details Modal */}
         {selected ? (
           <div
             onClick={closeDetails}
@@ -424,13 +433,13 @@ export default function CoachAppointments() {
                 {selected.meetingLink ? (
                   <p style={{ margin: "0 0 0.75rem", color: "#333" }}>
                     <b>Meeting Link:</b>{" "}
-                    <a href={selected.meetingLink} target="_blank" rel="noreferrer" style={{ color: "#f44336" }}>
+                    <a href={selected.meetingLink} target="_blank" rel="noreferrer" style={{ color: "#121c34" }}>
                       Open link
                     </a>
                   </p>
                 ) : (
                   <p style={{ margin: "0 0 0.75rem", color: "#666" }}>
-                    <b>Meeting Link:</b> (Not required for in-person)
+                    <b>Meeting Link:</b> Not available.
                   </p>
                 )}
 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; //new
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const HEROES = {
   thinker: {
     key: "thinker",
@@ -113,20 +115,87 @@ function StudentDashboard() {
   const [assessmentSummary, setAssessmentSummary] = useState("");
   const [assessmentInsights, setAssessmentInsights] = useState(null);
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [actionableItems, setActionableItems] = useState([]);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setStudentName(parsed.fullName || parsed.name || "Student");
-      const archetype = parsed.archetype || "";
-      const ranking = parseRankingFromArchetype(archetype);
-      const derivedTopHero = ranking[0]?.label || parseTopHeroFromArchetype(archetype);
-      const derivedSummary = ranking.length > 1 ? generateAiSummary(ranking[0], ranking[1], ranking) : null;
+    async function loadDashboard() {
+      const stored = localStorage.getItem("user");
+      if (!stored) {
+        setDashboardLoading(false);
+        return;
+      }
 
-      setTopInnerHero(derivedTopHero);
-      setAssessmentInsights(derivedSummary);
-      setAssessmentSummary(derivedSummary?.summary || "");
+      try {
+        const parsed = JSON.parse(stored);
+        setStudentName(parsed.fullName || parsed.name || "Student");
+
+        const archetype = parsed.archetype || "";
+        const ranking = parseRankingFromArchetype(archetype);
+        const derivedTopHero = ranking[0]?.label || parseTopHeroFromArchetype(archetype);
+        const derivedSummary = ranking.length > 1 ? generateAiSummary(ranking[0], ranking[1], ranking) : null;
+
+        setTopInnerHero(derivedTopHero);
+        setAssessmentInsights(derivedSummary);
+        setAssessmentSummary(derivedSummary?.summary || "");
+
+        const [appointmentsRes, actionItemsRes, coachesRes] = await Promise.all([
+          fetch(`${API_BASE}/users/${parsed.id}/appointments`),
+          fetch(`${API_BASE}/users/${parsed.id}/action_items`),
+          fetch(`${API_BASE}/api/coaches`),
+        ]);
+
+        const appointmentsData = await appointmentsRes.json();
+        const actionItemsData = await actionItemsRes.json();
+        const coachesData = await coachesRes.json();
+
+        const coachMap = {};
+        if (Array.isArray(coachesData)) {
+          coachesData.forEach((coach) => {
+            coachMap[coach.id] = coach.name || coach.fullName || coach.email || `Coach ${coach.id}`;
+          });
+        }
+
+        const mappedAppointments = (Array.isArray(appointmentsData) ? appointmentsData : []).map((appt) => {
+          const dateObj = new Date(appt.scheduledAt);
+          return {
+            id: appt.id,
+            coachName: coachMap[appt.coach_id] || `Coach ${appt.coach_id}`,
+            date: dateObj.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            time: dateObj.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+            }),
+            duration: "1 hour",
+          };
+        });
+
+        const mappedActionItems = (Array.isArray(actionItemsData) ? actionItemsData : []).map((item, index) => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          completed: item.completed,
+          coach: "Coach",
+          dueDate: "Assigned by coach",
+          priority: index === 0 ? "high" : index === 1 ? "medium" : "low",
+        }));
+
+        setUpcomingAppointments(mappedAppointments);
+        setActionableItems(mappedActionItems);
+      } catch (err) {
+        console.error("Failed to load student dashboard:", err);
+        setUpcomingAppointments([]);
+        setActionableItems([]);
+      } finally {
+        setDashboardLoading(false);
+      }
     }
+
+    loadDashboard();
   }, []);
 
   const coachImages = {
@@ -135,36 +204,36 @@ function StudentDashboard() {
     "Nina Perez": "/src/assets/imgs/coach-test.jpg",
   };
 
-  //dummy data for now - will be replaced with API calls to fetch real data for the logged in student
-  const upcomingAppointments = [
-    {
-      id: 1,
-      coachName: "Sarah Johnson",
-      date: "Feb 12, 2026",
-      time: "2:00 PM",
-      duration: "30 min",
-    },
-    {
-      id: 2,
-      coachName: "Michael Chen",
-      date: "Feb 14, 2026",
-      time: "4:30 PM",
-      duration: "45 min",
-    },
-    {
-      id: 3,
-      coachName: "Nina Perez",
-      date: "Feb 1, 2026",
-      time: "1:00 PM",
-      duration: "30 min",
-    },
-  ];
+  // //dummy data for now - will be replaced with API calls to fetch real data for the logged in student
+  // const upcomingAppointments = [
+  //   {
+  //     id: 1,
+  //     coachName: "Sarah Johnson",
+  //     date: "Feb 12, 2026",
+  //     time: "2:00 PM",
+  //     duration: "30 min",
+  //   },
+  //   {
+  //     id: 2,
+  //     coachName: "Michael Chen",
+  //     date: "Feb 14, 2026",
+  //     time: "4:30 PM",
+  //     duration: "45 min",
+  //   },
+  //   {
+  //     id: 3,
+  //     coachName: "Nina Perez",
+  //     date: "Feb 1, 2026",
+  //     time: "1:00 PM",
+  //     duration: "30 min",
+  //   },
+  // ];
 
-  const assignedPeer = { //dummy data!!
-    name: "Alex Rivera",
-    email: "alex.rivera@email.com",
-    major: "Computer Science",
-  };
+  // const assignedPeer = { //dummy data!!
+  //   name: "Alex Rivera",
+  //   email: "alex.rivera@email.com",
+  //   major: "Computer Science",
+  // };
 
   const toggleComplete = (itemId) => {
     setCompletedItems((prev) => ({
@@ -173,40 +242,40 @@ function StudentDashboard() {
     }));
   };
 
-  const actionableItems = [
-    {
-      id: 1,
-      title: "Complete Strengths Assessment",
-      dueDate: "Feb 10, 2026",
-      coach: "Sarah Johnson",
-      description: "Assessment to identify your key strengths",
-      priority: "high",
-    },
-    {
-      id: 2,
-      title: "Review Career Path Plan",
-      dueDate: "Feb 15, 2026",
-      coach: "Michael Chen",
-      description: "Review and provide feedback on your 5-year career plan",
-      priority: "medium",
-    },
-    {
-      id: 3,
-      title: "Practice Public Speaking",
-      dueDate: "Feb 28, 2026",
-      coach: "Sarah Johnson",
-      description: "Work on presentation skills - 15 minutes daily",
-      priority: "medium",
-    },
-    {
-      id: 4,
-      title: "Network with 3 Professionals",
-      dueDate: "Mar 10, 2026",
-      coach: "Michael Chen",
-      description: "Connect with professionals in your target field",
-      priority: "low",
-    },
-  ];
+  // const actionableItems = [
+  //   {
+  //     id: 1,
+  //     title: "Complete Strengths Assessment",
+  //     dueDate: "Feb 10, 2026",
+  //     coach: "Sarah Johnson",
+  //     description: "Assessment to identify your key strengths",
+  //     priority: "high",
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "Review Career Path Plan",
+  //     dueDate: "Feb 15, 2026",
+  //     coach: "Michael Chen",
+  //     description: "Review and provide feedback on your 5-year career plan",
+  //     priority: "medium",
+  //   },
+  //   {
+  //     id: 3,
+  //     title: "Practice Public Speaking",
+  //     dueDate: "Feb 28, 2026",
+  //     coach: "Sarah Johnson",
+  //     description: "Work on presentation skills - 15 minutes daily",
+  //     priority: "medium",
+  //   },
+  //   {
+  //     id: 4,
+  //     title: "Network with 3 Professionals",
+  //     dueDate: "Mar 10, 2026",
+  //     coach: "Michael Chen",
+  //     description: "Connect with professionals in your target field",
+  //     priority: "low",
+  //   },
+  // ];
 
   //color of to do list priority indicators
   const getPriorityColor = (priority) => {
@@ -223,7 +292,9 @@ function StudentDashboard() {
   };
 
   const completedCount = Object.values(completedItems).filter(Boolean).length;
-  const progressPercent = Math.round((completedCount / actionableItems.length) * 100);
+  const progressPercent = actionableItems.length
+    ? Math.round((completedCount / actionableItems.length) * 100)
+    : 0;
   
   const priorityOrder = {
     high: 1, 

@@ -376,7 +376,7 @@ function ParentDashboard() {
 	const sortedAppointments = [...appointments].sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 	const actionItems = (parentProgress?.action_items || []).map((item, index) => ({
 		id: item.id,
-		title: item.description,
+		title: item.title,
 		description: item.description,
 		completed: item.completed,
 		priority: inferPriority(index),

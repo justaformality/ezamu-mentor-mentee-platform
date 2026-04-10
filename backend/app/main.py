@@ -399,18 +399,26 @@ def login_alias(user_in: LoginIn, db: Session = Depends(get_db)):
 def get_coaches(db: Session = Depends(get_db)):
     coaches = db.query(User).filter(User.role == "coach").all()
     result = []
+
     for coach in coaches:
-        # If the path is already absolute (starts with /static/), use as is; otherwise, prepend
         if coach.profile_pic_url and coach.profile_pic_url.startswith("/static/"):
             profile_pic_url = coach.profile_pic_url
         else:
             profile_pic_url = None
+
+        try:
+            expertise = json.loads(coach.coach_expertise_json) if coach.coach_expertise_json else []
+        except (TypeError, ValueError):
+            expertise = []
+
         result.append({
             "id": coach.id,
             "name": coach.fullName or coach.email,
-            "description": coach.archetype or "Coach at EZAMU platform",
+            "bio": coach.coach_bio or "Coach at EZAMU platform",
+            "expertise": expertise,
             "profile_pic_url": profile_pic_url
         })
+
     return result
 
 @app.get("/users/{user_id}/appointments")
@@ -1241,6 +1249,13 @@ def get_peer_student_detail(peer_id: int, student_id: int, db: Session = Depends
 @app.post("/coaches/{coach_id}/availability", response_model = AvailabilityOut)
 def add_availability(coach_id: int, slot: AvailabilityIn, db: Session = Depends(get_db)):
     coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    from datetime import datetime
+
+    selected_date = datetime.strptime(slot.date, "%Y-%m-%d").date()
+
+    if selected_date < date.today():
+        raise HTTPException(status_code=400, detail="Cannot set availability in the past.")
+
     if not coach:
         raise HTTPException(status_code = 404, detail = "Coach not found")
     try:  
@@ -1391,6 +1406,13 @@ def create_student_action_item(coach_id: int, student_id: int, data: ActionItemC
 
 @app.post("/appointments/book")
 def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
+    from datetime import date
+
+    selected_date = datetime.strptime(booking.date, "%Y-%m-%d").date()
+
+    if selected_date < date.today():
+        raise HTTPException(status_code=400, detail="Cannot book past dates.")
+        
     student = db.query(User).filter(User.id == booking.student_id, User.role == "student").first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -1429,6 +1451,7 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
 
     db.add(new_appointment)
     db.delete(slot)
+    student.coachID = booking.coach_id
     db.commit()
     db.refresh(new_appointment)
 

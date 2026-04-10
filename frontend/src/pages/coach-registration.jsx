@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const careerFields = [
+	"Engineering",
+	"Medicine",
+	"Business",
+	"Arts",
+	"Science",
+	"Technology",
+	"Education",
+	"Law",
+	"Other",
+];
+
 function NumberInput({ value, onChange }) {
 	return (
 		<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
@@ -29,98 +41,39 @@ function NumberInput({ value, onChange }) {
 	);
 }
 
-function FieldsInput({ value, onChange }) {
-	const [input, setInput] = useState("");
-
-	const handleAdd = () => {
-		const trimmed = input.trim();
-		if (trimmed && !value.includes(trimmed)) {
-			onChange([...value, trimmed]);
-		}
-		setInput("");
-	};
-
-	const handleRemove = field => {
-		onChange(value.filter(f => f !== field));
-	};
-
+function CareerCards({ selected, onSelect }) {
 	return (
-		<div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "0.75rem" }}>
-			<div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", width: "100%" }}>
-				<input
-					type="text"
-					value={input}
-					onChange={e => setInput(e.target.value)}
-					onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
+		<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem", width: "100%" }}>
+			{careerFields.map(field => (
+				<div
+					key={field}
 					style={{
-						border: "1px solid #e6b6bb",
-						borderRadius: "999px",
-						padding: "0.65rem 1.1rem",
-						width: "60%",
-						fontSize: "1rem",
-						background: "#fff",
-						boxShadow: "0 2px 8px rgba(126,15,31,0.06)",
-						outline: "none"
-					}}
-					placeholder="e.g. Software Engineering"
-				/>
-				<button
-					onClick={handleAdd}
-					type="button"
-					style={{
-						padding: "0.65rem 1.2rem",
-						background: "#1c2740",
-						color: "#fff",
-						border: "none",
-						borderRadius: "999px",
+						border: selected.includes(field) ? "2px solid #121c34" : "1px solid #e6b6bb",
+						borderRadius: "1.1rem",
+						padding: "1rem 1.2rem",
+						minWidth: "110px",
+						textAlign: "center",
+						background: selected.includes(field) ? "#f7c5c8" : "#fff",
+						color: selected.includes(field) ? "#121c34" : "#1c2740",
 						fontWeight: 600,
 						fontSize: "1rem",
 						cursor: "pointer",
-						boxShadow: "0 2px 8px rgba(126,15,31,0.08)"
+						boxShadow: selected.includes(field)
+							? "0 2px 8px rgba(126,15,31,0.10)"
+							: "0 2px 8px rgba(126,15,31,0.06)",
+						transition: "all 0.18s"
+					}}
+					onClick={() => {
+						if (selected.includes(field)) {
+							onSelect(selected.filter(f => f !== field));
+						} else {
+							onSelect([...selected, field]);
+						}
 					}}
 				>
-					+ Add
-				</button>
-			</div>
-			{value.length > 0 && (
-				<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.6rem", width: "100%", marginTop: "0.25rem" }}>
-					{value.map(field => (
-						<div
-							key={field}
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								background: "#f7c5c8",
-								border: "2px solid #1c2740 ",
-								borderRadius: "999px",
-								padding: "0.35rem 0.9rem",
-								color: "#7e0f1f",
-								fontWeight: 600,
-								fontSize: "0.97rem"
-							}}
-						>
-							{field}
-							<button
-								onClick={() => handleRemove(field)}
-								type="button"
-								style={{
-									background: "none",
-									border: "none",
-									cursor: "pointer",
-									color: "#1c2740 ",
-									fontSize: "1rem",
-									lineHeight: 1,
-									padding: 0
-								}}
-								aria-label={`Remove ${field}`}
-							>
-								&#x2715;
-							</button>
-						</div>
-					))}
+					{field}
 				</div>
-			)}
+			))}
 		</div>
 	);
 }
@@ -151,7 +104,9 @@ function BioInput({ value, onChange }) {
 				}}
 				placeholder="Write a short bio for students (max 300 words)"
 			/>
-			<div style={{ fontSize: "0.98rem", color: "#1c2740", marginTop: "0.5rem" }}>{wordCount} / 300 words</div>
+			<div style={{ fontSize: "0.98rem", color: "#1c2740", marginTop: "0.5rem" }}>
+				{wordCount} / 300 words
+			</div>
 		</div>
 	);
 }
@@ -165,10 +120,10 @@ const steps = [
 		key: "age",
 	},
 	{
-		question: "What fields can you provide guidance for?",
-		render: (value, onChange) => <FieldsInput value={value} onChange={onChange} />,
+		question: "Select your area(s) of expertise",
+		render: (value, onChange) => <CareerCards selected={value} onSelect={onChange} />,
 		validate: value => Array.isArray(value) && value.length > 0,
-		error: "Please add at least one field.",
+		error: "Please select at least one area of expertise.",
 		key: "fields",
 	},
 	{
@@ -206,17 +161,52 @@ export default function CoachRegistration() {
 		setTouched(false);
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		if (!isValid) {
 			setTouched(true);
 			return;
 		}
+
 		setSaving(true);
-		setTimeout(() => {
+
+		try {
+			const storedUser = localStorage.getItem("user");
+			const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
+			if (!parsedUser?.id) {
+				setSaving(false);
+				return;
+			}
+
+			const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+			const res = await fetch(`${API_BASE}/coaches/${parsedUser.id}/profile`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					age: form.age,
+					bio: form.bio,
+					expertise: form.fields,
+				}),
+			});
+
+			const data = await res.json();
+
+			if (!res.ok) {
+				console.error(data);
+				setSaving(false);
+				return;
+			}
+
 			setSaving(false);
 			setSaved(true);
 			navigate("/coach-dashboard");
-		}, 1200);
+		} catch (err) {
+			console.error("Failed to save coach profile:", err);
+			setSaving(false);
+		}
 	};
 
 	return (
@@ -246,28 +236,47 @@ export default function CoachRegistration() {
 					alignItems: "center",
 				}}
 			>
-				<h2 style={{
-					textAlign: "center",
-					margin: "0 0 1.5rem",
-					color: "#66111b",
-					fontWeight: 700,
-					fontSize: "2rem"
-				}}>
+				<h2
+					style={{
+						textAlign: "center",
+						margin: "0 0 1.5rem",
+						color: "#66111b",
+						fontWeight: 700,
+						fontSize: "2rem"
+					}}
+				>
 					Basic Information
 				</h2>
+
 				<div style={{ width: "100%", marginBottom: "1.5rem" }}>
-					<div style={{
-						textAlign: "center",
-						fontWeight: 600,
-						fontSize: "1.15rem",
-						marginBottom: "0.7rem",
-						color: "#7e0f1f"
-					}}>{current.question}</div>
+					<div
+						style={{
+							textAlign: "center",
+							fontWeight: 600,
+							fontSize: "1.15rem",
+							marginBottom: "0.7rem",
+							color: "#7e0f1f"
+						}}
+					>
+						{current.question}
+					</div>
+
 					<div style={{ width: "100%" }}>{current.render(value, handleChange)}</div>
+
 					{touched && !isValid && (
-						<div style={{ color: "#121c34", fontSize: "0.98rem", marginTop: "0.7rem", textAlign: "center" }}>{current.error}</div>
+						<div
+							style={{
+								color: "#121c34",
+								fontSize: "0.98rem",
+								marginTop: "0.7rem",
+								textAlign: "center"
+							}}
+						>
+							{current.error}
+						</div>
 					)}
 				</div>
+
 				<div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "1.5rem" }}>
 					{step > 0 ? (
 						<button
@@ -290,7 +299,10 @@ export default function CoachRegistration() {
 						>
 							&#8592; Back
 						</button>
-					) : <div />}
+					) : (
+						<div />
+					)}
+
 					{step < steps.length - 1 ? (
 						<button
 							style={{
