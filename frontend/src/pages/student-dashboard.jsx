@@ -38,8 +38,34 @@ const formatDateBadge = (dateStr) => {
   const date = new Date(dateStr);
   return {
     day: date.getDate(),
-    month: date.toLocaleString("default", {month: "short"}),
+    month: date.toLocaleString("default", { month: "short" }),
   };
+};
+
+const formatDueDateTime = (dueDate, dueTime) => {
+  if (!dueDate) return "Assigned by coach";
+
+  try {
+    if (dueTime) {
+      const dt = new Date(`${dueDate}T${dueTime}`);
+      return dt.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    }
+
+    const d = new Date(`${dueDate}T00:00`);
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "Assigned by coach";
+  }
 };
 
 const parseTopHeroFromArchetype = (archetype) => {
@@ -174,14 +200,14 @@ function StudentDashboard() {
           };
         });
 
-        const mappedActionItems = (Array.isArray(actionItemsData) ? actionItemsData : []).map((item, index) => ({
+        const mappedActionItems = (Array.isArray(actionItemsData) ? actionItemsData : []).map((item) => ({
           id: item.id,
           title: item.title,
           description: item.description,
           completed: item.completed,
-          coach: "Coach",
-          dueDate: "Assigned by coach",
-          priority: index === 0 ? "high" : index === 1 ? "medium" : "low",
+          coach: item.assigned_by_name || item.coach_name || "Coach",
+          dueDate: formatDueDateTime(item.due_date, item.due_time),
+          priority: (item.priority || "medium").toLowerCase(),
         }));
 
         setUpcomingAppointments(mappedAppointments);
@@ -295,21 +321,21 @@ function StudentDashboard() {
   const progressPercent = actionableItems.length
     ? Math.round((completedCount / actionableItems.length) * 100)
     : 0;
-  
+
   const priorityOrder = {
-    high: 1, 
-    medium: 2, 
+    high: 1,
+    medium: 2,
     low: 3,
   };
-  
+
   const sortedItems = [...actionableItems].sort((a, b) => {
     const aComp = completedItems[a.id];
     const bComp = completedItems[b.id];
 
-    if(aComp !== bComp){
+    if (aComp !== bComp) {
       return aComp ? 1 : -1;
     }
-    if(!aComp && !bComp) {
+    if (!aComp && !bComp) {
       return priorityOrder[a.priority] - priorityOrder[b.priority];
     }
 
@@ -319,7 +345,7 @@ function StudentDashboard() {
   const incompleteItems = sortedItems.filter((item) => !completedItems[item.id]);
   const completedListItems = sortedItems.filter((item) => completedItems[item.id]);
 
-  const sortedAppointments = [...upcomingAppointments].sort((a, b) => { 
+  const sortedAppointments = [...upcomingAppointments].sort((a, b) => {
     const dateA = new Date(`${a.date} ${a.time}`);
     const dateB = new Date(`${b.date} ${b.time}`);
     return dateA - dateB;
@@ -349,7 +375,7 @@ function StudentDashboard() {
             alignItems: "start",
           }}
         >
-          
+
           {/* LEFT COLUMN */}
           <div>
             {/* Upcoming Appointments */}
@@ -366,83 +392,83 @@ function StudentDashboard() {
                 Upcoming Appointments
               </h2>
 
-               <p style={{ marginTop: "0", marginBottom: "1rem", color: "#666", fontSize: "0.9rem" }}>
-               {upcomingAppointments.length > 0
+              <p style={{ marginTop: "0", marginBottom: "1rem", color: "#666", fontSize: "0.9rem" }}>
+                {upcomingAppointments.length > 0
                   ? `You have ${upcomingAppointments.length} upcoming appointment(s). The next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.` //changed upcoming to sorted bc time
                   : "No upcoming appointments scheduled."}
-             </p>
+              </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {sortedAppointments.map((appointment) => {
                   const { day, month } = formatDateBadge(appointment.date); //added this line!
                   const isCoachImage = coachImages[appointment.coachName];
                   return (
-                  <div
-                    key={appointment.id}
-                    style={{
-                      backgroundColor: "#fff",
-                      display: "flex",
-                      gap: "1rem",
-                      alignItems: "flex-start",
-                      padding: "1rem",
-                      borderRadius: "6px",
-                      borderLeft: "4px solid #4170a2",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                    }}
-                  > 
-                  {/*adding this badge, adding below this */}
                     <div
-                    style={{
-                      minWidth: "50px",
-                      textAlign: "center",
-                      backgroundColor: "#70baf3",
-                      color: "#fff",
-                      borderRadius: "8px",
-                      padding: "0.5rem 0",
-                      fontWeight: "600",
-                    }}
+                      key={appointment.id}
+                      style={{
+                        backgroundColor: "#fff",
+                        display: "flex",
+                        gap: "1rem",
+                        alignItems: "flex-start",
+                        padding: "1rem",
+                        borderRadius: "6px",
+                        borderLeft: "4px solid #4170a2",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                      }}
                     >
-                      <div style={{ fontSize: "1.2rem" }}>{day}</div>
-                      <div style={{ fontSize: "0.75rem", textTransform: "uppercase" }}>{month}</div>
-                    </div>
-                    {/*adding above this */}
-                    {isCoachImage && (
-                      <img
-                        src={isCoachImage}
-                        alt={appointment.coachName}
+                      {/*adding this badge, adding below this */}
+                      <div
                         style={{
-                          width: "60px",
-                          height: "60px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          flexShrink: 0,
+                          minWidth: "50px",
+                          textAlign: "center",
+                          backgroundColor: "#70baf3",
+                          color: "#fff",
+                          borderRadius: "8px",
+                          padding: "0.5rem 0",
+                          fontWeight: "600",
                         }}
-                      />
-                    )}
-                    <div style={{ flex: 1 }}>
-                    <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
-                      {appointment.coachName}
-                    </p>
-                    <p
-                      style={{
-                        margin: "0.25rem 0",
-                        fontSize: "0.9rem",
-                        color: "#666",
-                      }}
-                    >
-                      📍 {appointment.date} at {appointment.time}
-                    </p>
-                    <p
-                      style={{
-                        margin: "0.25rem 0",
-                        fontSize: "0.85rem",
-                        color: "#999",
-                      }}
-                    >
-                      {appointment.duration}
-                    </p>
+                      >
+                        <div style={{ fontSize: "1.2rem" }}>{day}</div>
+                        <div style={{ fontSize: "0.75rem", textTransform: "uppercase" }}>{month}</div>
+                      </div>
+                      {/*adding above this */}
+                      {isCoachImage && (
+                        <img
+                          src={isCoachImage}
+                          alt={appointment.coachName}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
+                          {appointment.coachName}
+                        </p>
+                        <p
+                          style={{
+                            margin: "0.25rem 0",
+                            fontSize: "0.9rem",
+                            color: "#666",
+                          }}
+                        >
+                          📍 {appointment.date} at {appointment.time}
+                        </p>
+                        <p
+                          style={{
+                            margin: "0.25rem 0",
+                            fontSize: "0.85rem",
+                            color: "#999",
+                          }}
+                        >
+                          {appointment.duration}
+                        </p>
+                      </div>
                     </div>
-                  </div>
                   );
                 })}
               </div>
@@ -477,7 +503,7 @@ function StudentDashboard() {
                   </div>
                   <p style={{ margin: "0.5rem 0 0", color: "#666" }}>View your goal strategy and progress</p>
                 </div>
-            </Link>
+              </Link>
               <Link
                 to="/team"
                 style={{
@@ -510,135 +536,135 @@ function StudentDashboard() {
                     Meet your mentors and collaborators
                   </p>
                 </div>
-            </Link>
+              </Link>
             </div>
 
             {/* Assessment Results */}
-           <div
-             style={{
-             backgroundColor: "#f8f9fa",
-             borderRadius: "8px",
-             padding: "1.5rem",
-             marginBottom: "2rem",
-             border: "1px solid #e9ecef",
-             }}
-           >
-             <h2 style={{ fontSize: "1.2rem", marginBottom: "0.5rem", color: "#333" }}>
-             Assessment Results
-             </h2>
-
-
-             <p style={{ marginTop: "0", marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
-             {topInnerHero
-              ? `Your top Inner Hero is ${topInnerHero}.`
-              : "No assessment results yet."}
-             </p>
-
-
-             {topInnerHero && (
-              <button
-                type="button"
-                onClick={() => setShowAssessmentModal(true)}
-                style={{
-                  width: "100%",
-                  backgroundColor: "#fff",
-                  padding: "1rem",
-                  borderRadius: "6px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  borderLeft: "4px solid #add8e6",
-                  borderTop: "none",
-                  borderRight: "none",
-                  borderBottom: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{ fontWeight: "600", color: "#333", fontSize: "1rem" }}>
-                  {topInnerHero}
-                </span>
-                <span style={{ color: "#1c2740", fontSize: "1.1rem", fontWeight: 700 }}>→</span>
-              </button>
-             )}
-         </div>
-         </div>
-
-         {showAssessmentModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              backgroundColor: "rgba(0,0,0,0.45)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "1rem",
-              zIndex: 1000,
-            }}
-            onClick={() => setShowAssessmentModal(false)}
-          >
             <div
               style={{
-                width: "100%",
-                maxWidth: "560px",
-                backgroundColor: "#fff",
-                borderRadius: "14px",
+                backgroundColor: "#f8f9fa",
+                borderRadius: "8px",
                 padding: "1.5rem",
-                boxShadow: "0 12px 30px rgba(0,0,0,0.2)",
+                marginBottom: "2rem",
+                border: "1px solid #e9ecef",
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                <h3 style={{ margin: 0, color: "#1c2740", fontSize: "1.3rem" }}>{topInnerHero || "Inner Hero"}</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowAssessmentModal(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#1c2740",
-                    fontSize: "1.2rem",
-                    padding: 0,
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              <p style={{ margin: 0, color: "#555", lineHeight: 1.7 }}>
-                {assessmentSummary || "No detailed summary is available yet."}
+              <h2 style={{ fontSize: "1.2rem", marginBottom: "0.5rem", color: "#333" }}>
+                Assessment Results
+              </h2>
+
+
+              <p style={{ marginTop: "0", marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
+                {topInnerHero
+                  ? `Your top Inner Hero is ${topInnerHero}.`
+                  : "No assessment results yet."}
               </p>
 
-              {assessmentInsights?.strengths?.length > 0 && (
-                <div style={{ marginTop: "1rem" }}>
-                  <h4 style={{ margin: "0 0 0.5rem", color: "#1c2740", fontSize: "1rem" }}>AI Insight Summary</h4>
-                  <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#1c2740", lineHeight: 1.7 }}>
-                    {assessmentInsights.strengths.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
 
-              {assessmentInsights?.nextSteps?.length > 0 && (
-                <div style={{ marginTop: "1rem" }}>
-                  <h4 style={{ margin: "0 0 0.5rem", color: "#1c2740", fontSize: "1rem" }}>Suggested Next Steps</h4>
-                  <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#1c2740", lineHeight: 1.7 }}>
-                    {assessmentInsights.nextSteps.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {assessmentInsights?.marketingBlurb && (
-                <p style={{ marginTop: "1rem", marginBottom: 0, color: "#1c2740", lineHeight: 1.7 }}>
-                  <strong>How Ezamu uses this:</strong> {assessmentInsights.marketingBlurb}
-                </p>
+              {topInnerHero && (
+                <button
+                  type="button"
+                  onClick={() => setShowAssessmentModal(true)}
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#fff",
+                    padding: "1rem",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    borderLeft: "4px solid #add8e6",
+                    borderTop: "none",
+                    borderRight: "none",
+                    borderBottom: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontWeight: "600", color: "#333", fontSize: "1rem" }}>
+                    {topInnerHero}
+                  </span>
+                  <span style={{ color: "#1c2740", fontSize: "1.1rem", fontWeight: 700 }}>→</span>
+                </button>
               )}
             </div>
           </div>
-         )}
+
+          {showAssessmentModal && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                backgroundColor: "rgba(0,0,0,0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "1rem",
+                zIndex: 1000,
+              }}
+              onClick={() => setShowAssessmentModal(false)}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: "560px",
+                  backgroundColor: "#fff",
+                  borderRadius: "14px",
+                  padding: "1.5rem",
+                  boxShadow: "0 12px 30px rgba(0,0,0,0.2)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                  <h3 style={{ margin: 0, color: "#1c2740", fontSize: "1.3rem" }}>{topInnerHero || "Inner Hero"}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowAssessmentModal(false)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#1c2740",
+                      fontSize: "1.2rem",
+                      padding: 0,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p style={{ margin: 0, color: "#555", lineHeight: 1.7 }}>
+                  {assessmentSummary || "No detailed summary is available yet."}
+                </p>
+
+                {assessmentInsights?.strengths?.length > 0 && (
+                  <div style={{ marginTop: "1rem" }}>
+                    <h4 style={{ margin: "0 0 0.5rem", color: "#1c2740", fontSize: "1rem" }}>AI Insight Summary</h4>
+                    <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#1c2740", lineHeight: 1.7 }}>
+                      {assessmentInsights.strengths.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {assessmentInsights?.nextSteps?.length > 0 && (
+                  <div style={{ marginTop: "1rem" }}>
+                    <h4 style={{ margin: "0 0 0.5rem", color: "#1c2740", fontSize: "1rem" }}>Suggested Next Steps</h4>
+                    <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#1c2740", lineHeight: 1.7 }}>
+                      {assessmentInsights.nextSteps.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {assessmentInsights?.marketingBlurb && (
+                  <p style={{ marginTop: "1rem", marginBottom: 0, color: "#1c2740", lineHeight: 1.7 }}>
+                    <strong>How Ezamu uses this:</strong> {assessmentInsights.marketingBlurb}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* RIGHT COLUMN */}
           <div
@@ -679,82 +705,82 @@ function StudentDashboard() {
             {/*adding above this for progress bar! */}
 
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {incompleteItems.map((item) => { //changing actionableitems to incompleteItems
-                  const isCompleted = completedItems[item.id];
-                  return (
-                <div
-                  key={item.id}
-                  style={{
-                    backgroundColor: "#fff",
-                    padding: "1.25rem",
-                    borderRadius: "6px",
-                    borderLeft: `4px solid ${getPriorityColor(item.priority)}`,
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                    opacity: isCompleted ? 0.6 : 1,
-                    //textDecoration: isCompleted ? "line-through" : "none",
-                  }}
-                >
+              {incompleteItems.map((item) => { //changing actionableitems to incompleteItems
+                const isCompleted = completedItems[item.id];
+                return (
                   <div
+                    key={item.id}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "start",
-                      marginBottom: "0.5rem",
+                      backgroundColor: "#fff",
+                      padding: "1.25rem",
+                      borderRadius: "6px",
+                      borderLeft: `4px solid ${getPriorityColor(item.priority)}`,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                      opacity: isCompleted ? 0.6 : 1,
+                      //textDecoration: isCompleted ? "line-through" : "none",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isCompleted}
-                      onChange={() => toggleComplete(item.id)}
+                    <div
                       style={{
-                        width: "20px",
-                        height: "20px",
-                        cursor: "pointer",
-                        marginRight: "0.75rem",
-                        marginTop: "0.125rem",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <p style={{ margin: "0", fontWeight: "600", color: "#333", flex: 1 }}>
-                      {item.title}
-                    </p>
-                    <span
-                      style={{
-                        backgroundColor: getPriorityColor(item.priority),
-                        color: "#fff",
-                        padding: "0.25rem 0.75rem",
-                        borderRadius: "20px",
-                        fontSize: "0.75rem",
-                        fontWeight: "600",
-                        marginLeft: "0.5rem",
-                        whiteSpace: "nowrap",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "start",
+                        marginBottom: "0.5rem",
                       }}
                     >
-                      {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
-                    </span>
+                      <input
+                        type="checkbox"
+                        checked={isCompleted}
+                        onChange={() => toggleComplete(item.id)}
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          cursor: "pointer",
+                          marginRight: "0.75rem",
+                          marginTop: "0.125rem",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <p style={{ margin: "0", fontWeight: "600", color: "#333", flex: 1 }}>
+                        {item.title}
+                      </p>
+                      <span
+                        style={{
+                          backgroundColor: getPriorityColor(item.priority),
+                          color: "#fff",
+                          padding: "0.25rem 0.75rem",
+                          borderRadius: "20px",
+                          fontSize: "0.75rem",
+                          fontWeight: "600",
+                          marginLeft: "0.5rem",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        margin: "0.5rem 0",
+                        fontSize: "0.9rem",
+                        color: "#666",
+                      }}
+                    >
+                      {item.description}
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "0.85rem",
+                        color: "#999",
+                        marginTop: "0.75rem",
+                      }}
+                    >
+                      <span>👤 {item.coach}</span>
+                      <span>📅 Due: {item.dueDate}</span>
+                    </div>
                   </div>
-                  <p
-                    style={{
-                      margin: "0.5rem 0",
-                      fontSize: "0.9rem",
-                      color: "#666",
-                    }}
-                  >
-                    {item.description}
-                  </p>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: "0.85rem",
-                      color: "#999",
-                      marginTop: "0.75rem",
-                    }}
-                  >
-                    <span>👤 {item.coach}</span>
-                    <span>📅 Due: {item.dueDate}</span>
-                  </div>
-                </div>
                 );
               })}
               {/*adding completed divider*/}
@@ -770,7 +796,7 @@ function StudentDashboard() {
                   }}
                 >
                   Completed
-                  </div>
+                </div>
               )}
               {completedListItems.map((item) => {
                 return (
@@ -807,7 +833,7 @@ function StudentDashboard() {
                           flexShrink: 0,
                         }}
                       />
-                      <p style={{margin: "0", fontWeight: "600", flex:1}}>
+                      <p style={{ margin: "0", fontWeight: "600", flex: 1 }}>
                         {item.title}
                       </p>
                     </div>

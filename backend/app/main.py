@@ -13,7 +13,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Time, ForeignKey, Boolean, Table, UniqueConstraint
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Date,
+    Time,
+    ForeignKey,
+    Boolean,
+    Table,
+    UniqueConstraint,
+)
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 
@@ -30,74 +42,100 @@ Base = declarative_base()
 
 DEMO_ALL_STUDENTS_FOR_COACH = True
 
+
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key = True, index = True)
-    email = Column(String, unique = True, nullable = False, index = True)
-    password_hash = Column(String, nullable = False)
-    role = Column(String, default = "student")
-    fullName = Column(String, default = "")
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, default="student")
+    fullName = Column(String, default="")
     createdAt = Column(DateTime, default=datetime.now(timezone.utc))
-    profile_pic_url = Column(String, nullable=True)  # URL or path to profile picture
+    # URL or path to profile picture
+    profile_pic_url = Column(String, nullable=True)
     archetype = Column(String, nullable=True)
 
-    coachID = Column(Integer, ForeignKey("users.id"), nullable = True)
-    parentID = Column(Integer, ForeignKey("users.id"), nullable = True)
-    peerID = Column(Integer, ForeignKey("users.id"), nullable = True)
+    coachID = Column(Integer, ForeignKey("users.id"), nullable=True)
+    parentID = Column(Integer, ForeignKey("users.id"), nullable=True)
+    peerID = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    coach = relationship("User", remote_side=[id], foreign_keys=[coachID], backref="students")
-    parent = relationship("User", remote_side=[id], foreign_keys=[parentID], backref="children")
-    peer = relationship("User", remote_side=[id], foreign_keys=[peerID], backref="peers")
-    action_items = relationship("ActionItem", back_populates="user")
+    coach = relationship(
+        "User", remote_side=[id], foreign_keys=[coachID], backref="students"
+    )
+    parent = relationship(
+        "User", remote_side=[id], foreign_keys=[parentID], backref="children"
+    )
+    peer = relationship(
+        "User", remote_side=[id], foreign_keys=[peerID], backref="peers"
+    )
+    action_items = relationship(
+        "ActionItem",
+        foreign_keys="ActionItem.user_id",
+        back_populates="user"
+    )
 
     student_bio = Column(String, nullable=True)
-    student_goals_json = Column(String, nullable=True)   # store list as JSON string
+    # store list as JSON string
+    student_goals_json = Column(String, nullable=True)
     student_age = Column(String, nullable=True)
 
     coach_bio = Column(String, nullable=True)
     coach_expertise_json = Column(String, nullable=True)
     coach_age = Column(String, nullable=True)
 
+
 class Appointment(Base):
     __tablename__ = "appointments"
 
-    id = Column(Integer, primary_key = True, index = True)
-    student_id = Column(Integer, ForeignKey("users.id"), nullable = False)
-    coach_id = Column(Integer, ForeignKey("users.id"), nullable = False)
-    title = Column(String, nullable = False)
-    scheduledAt = Column(DateTime, nullable = False)
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    coach_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    scheduledAt = Column(DateTime, nullable=False)
 
-    student = relationship("User", foreign_keys =[student_id], backref="student_appointments")
-    coach = relationship("User", foreign_keys = [coach_id], backref="coach_appointments")
+    student = relationship(
+        "User", foreign_keys=[student_id], backref="student_appointments"
+    )
+    coach = relationship("User", foreign_keys=[
+                         coach_id], backref="coach_appointments")
+
 
 class ActionItem(Base):
     __tablename__ = "action_items"
 
-    id = Column(Integer, primary_key = True, index = True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    title = Column(String, nullable = False, default = "Untitled Task")
-    description = Column(String, nullable = False)
-    completed = Column(Boolean, default = False)
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    title = Column(String, nullable=False, default="Untitled Task")
+    description = Column(String, nullable=False)
+    completed = Column(Boolean, default=False)
+    priority = Column(String, nullable=False, default="medium")
+    due_date = Column(Date, nullable=True)
+    due_time = Column(Time, nullable=True)
 
-    user = relationship("User", back_populates="action_items")
+    user = relationship("User", foreign_keys=[
+                        user_id], back_populates="action_items")
+    assigned_by = relationship("User", foreign_keys=[assigned_by_id])
+
 
 class CoachAvailability(Base):
     __tablename__ = "coach_availability"
 
-    id = Column(Integer, primary_key = True, index = True)
-    coach_id = Column(Integer, ForeignKey("users.id"), nullable = False)
-    date = Column(Date, nullable = False)
-    start_time = Column(Time, nullable = False)
-    end_time = Column(Time, nullable = False)
+    id = Column(Integer, primary_key=True, index=True)
+    coach_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
 
     coach = relationship("User", backref="availability_slots")
 
-    __table_args__ = (UniqueConstraint('coach_id', 'date', 'start_time'),)
+    __table_args__ = (UniqueConstraint("coach_id", "date", "start_time"),)
 
 
 class ChangeEmailIn(BaseModel):
     new_email: EmailStr
+
 
 class AssessmentResponse(Base):
     __tablename__ = "assessment_responses"
@@ -105,11 +143,13 @@ class AssessmentResponse(Base):
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assessment_name = Column(String, nullable=False)
-    responses_json = Column(String, nullable=False)   # store JSON as string
+    responses_json = Column(String, nullable=False)  # store JSON as string
     score = Column(String, nullable=True)
-    submitted_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    submitted_at = Column(DateTime, default=datetime.now(
+        timezone.utc), nullable=False)
 
     student = relationship("User", backref="assessment_responses")
+
 
 class ParentInvite(Base):
     __tablename__ = "parent_invites"
@@ -119,13 +159,17 @@ class ParentInvite(Base):
     parent_email = Column(String, nullable=False)
     parent_full_name = Column(String, nullable=True)
     status = Column(String, default="pending")  # pending / accepted
-    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=datetime.now(
+        timezone.utc), nullable=False)
 
-    student = relationship("User", foreign_keys=[student_id], backref="parent_invites")
+    student = relationship("User", foreign_keys=[
+                           student_id], backref="parent_invites")
+
 
 class ParentInviteIn(BaseModel):
     parent_email: EmailStr
     parent_full_name: Optional[str] = None
+
 
 class ParentInviteOut(BaseModel):
     id: int
@@ -135,13 +179,16 @@ class ParentInviteOut(BaseModel):
     status: str
     created_at: str
 
+
 class PeerAssignRequest(BaseModel):
     actor_id: int
+
 
 class StudentProfileIn(BaseModel):
     age: Optional[str] = None
     bio: Optional[str] = None
     goals: List[str] = Field(default_factory=list)
+
 
 class StudentProfileOut(BaseModel):
     user_id: int
@@ -150,10 +197,12 @@ class StudentProfileOut(BaseModel):
     bio: Optional[str] = None
     goals: List[str] = Field(default_factory=list)
 
+
 class CoachProfileIn(BaseModel):
     age: Optional[str] = None
     bio: Optional[str] = None
     expertise: List[str] = Field(default_factory=list)
+
 
 class CoachProfileOut(BaseModel):
     user_id: int
@@ -161,6 +210,7 @@ class CoachProfileOut(BaseModel):
     age: Optional[str] = None
     bio: Optional[str] = None
     expertise: List[str] = Field(default_factory=list)
+
 
 class CoachStudentDetailOut(BaseModel):
     id: int
@@ -171,6 +221,7 @@ class CoachStudentDetailOut(BaseModel):
     goals: List[str] = Field(default_factory=list)
     action_items: List[Dict[str, Any]]
 
+
 class PeerStudentDetailOut(BaseModel):
     id: int
     fullName: Optional[str] = None
@@ -180,6 +231,7 @@ class PeerStudentDetailOut(BaseModel):
     goals: List[str] = Field(default_factory=list)
     action_items: List[Dict[str, Any]]
 
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -188,6 +240,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
+
 
 def _map_role(payload: Dict[str, Any]) -> str:
     # Accept multiple naming conventions from different frontends
@@ -260,12 +313,15 @@ class UserOut(BaseModel):
     profile_pic_url: Optional[str] = None
     archetype: Optional[str] = None
 
+
 class ArchetypeIn(BaseModel):
     archetype: str
 
+
 class AvailabilityIn(BaseModel):
-    date: str # YYYY-MM-DD
-    start_time: str # HH:MM
+    date: str  # YYYY-MM-DD
+    start_time: str  # HH:MM
+
 
 class AvailabilityOut(BaseModel):
     id: int
@@ -273,16 +329,19 @@ class AvailabilityOut(BaseModel):
     start_time: str
     end_time: str
 
+
 class BookAppointmentIn(BaseModel):
     student_id: int
     coach_id: int
-    date: str 
+    date: str
     time: str
+
 
 class AssessmentResponseIn(BaseModel):
     assessment_name: str
     responses: Dict[str, Any]
     score: Optional[str] = None
+
 
 class AssessmentResponseOut(BaseModel):
     id: int
@@ -292,9 +351,22 @@ class AssessmentResponseOut(BaseModel):
     score: Optional[str] = None
     submitted_at: str
 
+
 class ActionItemCreate(BaseModel):
     title: str
     description: str
+    priority: str = "medium"
+    due_date: Optional[str] = None   # YYYY-MM-DD
+    due_time: Optional[str] = None   # HH:MM
+
+
+class ActionItemUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    due_date: Optional[str] = None
+    due_time: Optional[str] = None
+
 
 class ActionItemOut(BaseModel):
     id: int
@@ -302,6 +374,12 @@ class ActionItemOut(BaseModel):
     title: str
     description: str
     completed: bool
+    priority: str
+    assigned_by_id: Optional[int] = None
+    assigned_by_name: Optional[str] = None
+    due_date: Optional[str] = None
+    due_time: Optional[str] = None
+
 
 app = FastAPI(title="EZAMU POC Backend (DB)")
 
@@ -324,12 +402,14 @@ app.add_middleware(
 static_path = os.path.join(os.path.dirname(__file__), "..", "static")
 app.mount("/static", StaticFiles(directory=static_path), name="static")
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 @app.get("/health")
 def health():
@@ -341,28 +421,29 @@ def register(user_in: RegisterIn, db: Session = Depends(get_db)):
     email = _normalize_email(str(user_in.email))
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
-        raise HTTPException(status_code = 400, detail="Email is already registered")
+        raise HTTPException(
+            status_code=400, detail="Email is already registered")
 
     role = _map_role(user_in.model_dump())
     full_name = _map_full_name(user_in.model_dump())
 
     new_user = User(
-        email = email,
-        password_hash = pwd_context.hash(user_in.password),
-        role = role,
-        fullName = full_name,
-        createdAt = datetime.now(timezone.utc)
+        email=email,
+        password_hash=pwd_context.hash(user_in.password),
+        role=role,
+        fullName=full_name,
+        createdAt=datetime.now(timezone.utc),
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     return UserOut(
-        id = new_user.id,
-        email = new_user.email,
-        role = new_user.role,
-        fullName = new_user.fullName,
-        createdAt = new_user.createdAt.isoformat()
+        id=new_user.id,
+        email=new_user.email,
+        role=new_user.role,
+        fullName=new_user.fullName,
+        createdAt=new_user.createdAt.isoformat(),
     )
 
 
@@ -372,16 +453,19 @@ def login(user_in: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
 
     if not user or not pwd_context.verify(user_in.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(
+            status_code=401, detail="Invalid email or password")
 
     return UserOut(
-        id = user.id,
-        email = user.email,
-        role = user.role,
-        fullName = user.fullName or None,
-        createdAt = user.createdAt.isoformat(),
-        profile_pic_url = user.profile_pic_url if hasattr(user, 'profile_pic_url') else None,
-        archetype = user.archetype if hasattr(user, 'archetype') else None
+        id=user.id,
+        email=user.email,
+        role=user.role,
+        fullName=user.fullName or None,
+        createdAt=user.createdAt.isoformat(),
+        profile_pic_url=(
+            user.profile_pic_url if hasattr(user, "profile_pic_url") else None
+        ),
+        archetype=user.archetype if hasattr(user, "archetype") else None,
     )
 
 
@@ -390,9 +474,11 @@ def login(user_in: LoginIn, db: Session = Depends(get_db)):
 def signup_alias(user_in: RegisterIn, db: Session = Depends(get_db)):
     return register(user_in, db)
 
+
 @app.post("/api/login", response_model=UserOut)
 def login_alias(user_in: LoginIn, db: Session = Depends(get_db)):
     return login(user_in, db)
+
 
 # list of coaches
 @app.get("/api/coaches")
@@ -407,64 +493,91 @@ def get_coaches(db: Session = Depends(get_db)):
             profile_pic_url = None
 
         try:
-            expertise = json.loads(coach.coach_expertise_json) if coach.coach_expertise_json else []
+            expertise = (
+                json.loads(coach.coach_expertise_json)
+                if coach.coach_expertise_json
+                else []
+            )
         except (TypeError, ValueError):
             expertise = []
 
-        result.append({
-            "id": coach.id,
-            "name": coach.fullName or coach.email,
-            "bio": coach.coach_bio or "Coach at EZAMU platform",
-            "expertise": expertise,
-            "profile_pic_url": profile_pic_url
-        })
+        result.append(
+            {
+                "id": coach.id,
+                "name": coach.fullName or coach.email,
+                "bio": coach.coach_bio or "Coach at EZAMU platform",
+                "expertise": expertise,
+                "profile_pic_url": profile_pic_url,
+            }
+        )
 
     return result
+
 
 @app.get("/users/{user_id}/appointments")
 def get_appointments(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code = 404, detail = "User not found")
-    
+        raise HTTPException(status_code=404, detail="User not found")
+
     if user.role == "student":
-        appointments = db.query(Appointment).filter(Appointment.student_id == user_id).all()
+        appointments = (
+            db.query(Appointment).filter(
+                Appointment.student_id == user_id).all()
+        )
     elif user.role == "coach":
-        appointments = db.query(Appointment).filter(Appointment.coach_id == user_id).all()
+        appointments = (
+            db.query(Appointment).filter(Appointment.coach_id == user_id).all()
+        )
     else:
         appointments = []
 
     return [
         {
-            "id": a.id, 
+            "id": a.id,
             "student_id": a.student_id,
             "coach_id": a.coach_id,
-            "title": a.title, 
-            "scheduledAt": a.scheduledAt.isoformat()
+            "title": a.title,
+            "scheduledAt": a.scheduledAt.isoformat(),
         }
         for a in appointments
     ]
+
 
 @app.get("/users/{user_id}/action_items")
 def get_action_items(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code = 404, detail = "User not found")
-    
+        raise HTTPException(status_code=404, detail="User not found")
+
     return [
-        {"id": ai.id, "title": ai.title, "description": ai.description, "completed": ai.completed}
+        {
+            "id": ai.id,
+            "title": ai.title,
+            "description": ai.description,
+            "completed": ai.completed,
+            "priority": ai.priority,
+            "assigned_by_id": ai.assigned_by_id,
+            "assigned_by_name": ai.assigned_by.fullName if ai.assigned_by else "Coach",
+            "due_date": ai.due_date.isoformat() if ai.due_date else None,
+            "due_time": ai.due_time.strftime("%H:%M") if ai.due_time else None,
+        }
         for ai in user.action_items
     ]
 
+
 @app.post("/users/{user_id}/change_password")
-def change_password(user_id: int, data: ChangePasswordIn, db: Session = Depends(get_db)):
+def change_password(
+    user_id: int, data: ChangePasswordIn, db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     if not pwd_context.verify(data.current_password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
-    
+        raise HTTPException(
+            status_code=401, detail="Current password is incorrect")
+
     user.password_hash = pwd_context.hash(data.new_password)
     db.commit()
     db.refresh(user)
@@ -480,28 +593,38 @@ def change_email(user_id: int, data: ChangeEmailIn, db: Session = Depends(get_db
     new_email = _normalize_email(str(data.new_email))
 
     # Only block if the normalized new email matches another user's email
-    existing = db.query(User).filter(
-        User.id != user.id,
-        User.email == new_email
-    ).first()
+    existing = (
+        db.query(User).filter(User.id != user.id,
+                              User.email == new_email).first()
+    )
     if existing:
-        raise HTTPException(status_code=400, detail="Email is already registered")
+        raise HTTPException(
+            status_code=400, detail="Email is already registered")
 
     user.email = new_email
     db.commit()
     db.refresh(user)
-    return {"message": "Email updated successfully", "user_id": user.id, "new_email": user.email}
+    return {
+        "message": "Email updated successfully",
+        "user_id": user.id,
+        "new_email": user.email,
+    }
+
 
 # Profile picture upload endpoint
 @app.post("/users/{user_id}/upload_profile_pic/")
-def upload_profile_pic(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+def upload_profile_pic(
+    user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if file.content_type != "image/png":
-        raise HTTPException(status_code=400, detail="Only PNG files are allowed")
+        raise HTTPException(
+            status_code=400, detail="Only PNG files are allowed")
     # Save file to static/profile_pics/{user_id}.png
-    static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "profile_pics")
+    static_dir = os.path.join(os.path.dirname(
+        __file__), "..", "static", "profile_pics")
     os.makedirs(static_dir, exist_ok=True)
     file_path = os.path.join(static_dir, f"{user_id}.png")
     with open(file_path, "wb") as buffer:
@@ -513,11 +636,16 @@ def upload_profile_pic(user_id: int, file: UploadFile = File(...), db: Session =
     db.refresh(user)
     return {"message": "Profile picture updated", "profile_pic_url": rel_url}
 
-#for parents to search their kids
+
+# for parents to search their kids
 @app.get("/students/by_email")
 def get_student_by_email(email: str = Query(...), db: Session = Depends(get_db)):
     normalized_email = _normalize_email(email)
-    student = db.query(User).filter(User.email == normalized_email, User.role == "student").first()
+    student = (
+        db.query(User)
+        .filter(User.email == normalized_email, User.role == "student")
+        .first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -536,9 +664,11 @@ def get_student_by_email(email: str = Query(...), db: Session = Depends(get_db))
         "archetype": student.archetype,
     }
 
+
 @app.get("/coaches/{coach_id}/students")
 def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
@@ -552,45 +682,61 @@ def get_coach_students(coach_id: int, db: Session = Depends(get_db)):
             "id": student.id,
             "email": student.email,
             "fullName": student.fullName,
-            "createdAt": student.createdAt.isoformat()
+            "createdAt": student.createdAt.isoformat(),
         }
         for student in students
     ]
 
+
 @app.get("/parents/{parent_id}/students")
 def get_parent_students(parent_id: int, db: Session = Depends(get_db)):
-    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    parent = db.query(User).filter(User.id == parent_id,
+                                   User.role == "parent").first()
     if not parent:
-        raise HTTPException(status_code = 404, detail = "Parent not found")
-    
+        raise HTTPException(status_code=404, detail="Parent not found")
+
     return [
         {
             "id": student.id,
             "email": student.email,
             "fullName": student.fullName,
-            "createdAt": student.createdAt.isoformat()
+            "createdAt": student.createdAt.isoformat(),
         }
         for student in parent.children
     ]
 
+
 @app.get("/parents/{parent_id}/students/{student_id}/progress")
-def get_parent_student_progress(parent_id: int, student_id: int, db: Session = Depends(get_db)):
-    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+def get_parent_student_progress(
+    parent_id: int, student_id: int, db: Session = Depends(get_db)
+):
+    parent = db.query(User).filter(User.id == parent_id,
+                                   User.role == "parent").first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
 
-    student = db.query(User).filter(
-        User.id == student_id,
-        User.role == "student",
-        User.parentID == parent_id
-    ).first()
+    student = (
+        db.query(User)
+        .filter(
+            User.id == student_id, User.role == "student", User.parentID == parent_id
+        )
+        .first()
+    )
     if not student:
-        raise HTTPException(status_code=403, detail="Student is not linked to this parent")
+        raise HTTPException(
+            status_code=403, detail="Student is not linked to this parent"
+        )
 
-    appointments = db.query(Appointment).filter(Appointment.student_id == student_id).all()
-    assessments = db.query(AssessmentResponse).filter(
-        AssessmentResponse.student_id == student_id
-    ).order_by(AssessmentResponse.submitted_at.desc()).all()
+    appointments = (
+        db.query(Appointment).filter(
+            Appointment.student_id == student_id).all()
+    )
+    assessments = (
+        db.query(AssessmentResponse)
+        .filter(AssessmentResponse.student_id == student_id)
+        .order_by(AssessmentResponse.submitted_at.desc())
+        .all()
+    )
 
     return {
         "student": {
@@ -604,7 +750,12 @@ def get_parent_student_progress(parent_id: int, student_id: int, db: Session = D
                 "id": ai.id,
                 "title": ai.title,
                 "description": ai.description,
-                "completed": ai.completed
+                "completed": ai.completed,
+                "priority": ai.priority,
+                "assigned_by_id": ai.assigned_by_id,
+                "assigned_by_name": ai.assigned_by.fullName if ai.assigned_by else "Coach",
+                "due_date": ai.due_date.isoformat() if ai.due_date else None,
+                "due_time": ai.due_time.strftime("%H:%M") if ai.due_time else None,
             }
             for ai in student.action_items
         ],
@@ -613,7 +764,7 @@ def get_parent_student_progress(parent_id: int, student_id: int, db: Session = D
                 "id": appt.id,
                 "title": appt.title,
                 "scheduledAt": appt.scheduledAt.isoformat(),
-                "coach_id": appt.coach_id
+                "coach_id": appt.coach_id,
             }
             for appt in appointments
         ],
@@ -626,82 +777,109 @@ def get_parent_student_progress(parent_id: int, student_id: int, db: Session = D
                 "submitted_at": a.submitted_at.isoformat(),
             }
             for a in assessments
-        ]
+        ],
     }
+
 
 @app.get("/peers/{peer_id}/students")
 def get_peer_students(peer_id: int, db: Session = Depends(get_db)):
-    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+    peer = db.query(User).filter(User.id == peer_id,
+                                 User.role == "student").first()
     if not peer:
-        raise HTTPException(status_code = 404, detail = "Peer not found")
-    
+        raise HTTPException(status_code=404, detail="Peer not found")
+
     return [
         {
             "id": student.id,
             "email": student.email,
             "fullName": student.fullName,
-            "createdAt": student.createdAt.isoformat()
+            "createdAt": student.createdAt.isoformat(),
         }
         for student in peer.peers
     ]
 
+
 @app.post("/students/{student_id}/assign_coach/{coach_id}")
 def assign_coach(student_id: int, coach_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
-    coach = db.query(User).filter(User.id == coach_id, User.role =="coach").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not student:
-        raise HTTPException(status_code = 404, detail = "Student not found")
+        raise HTTPException(status_code=404, detail="Student not found")
     if not coach:
-        raise HTTPException(status_code = 404, detail = "Coach not found")
-    
+        raise HTTPException(status_code=404, detail="Coach not found")
+
     student.coachID = coach_id
     db.commit()
     db.refresh(student)
 
     return {"message": "Coach assigned successfully"}
 
+
 @app.post("/students/{student_id}/assign_parent/{parent_id}")
 def assign_parent(student_id: int, parent_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
-    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
+    parent = db.query(User).filter(User.id == parent_id,
+                                   User.role == "parent").first()
     if not student:
-        raise HTTPException(status_code = 404, detail = "Student not found")
+        raise HTTPException(status_code=404, detail="Student not found")
     if not parent:
-        raise HTTPException(status_code = 404, detail = "Parent not found")
+        raise HTTPException(status_code=404, detail="Parent not found")
     if student.parentID and student.parentID != parent_id:
-        raise HTTPException(status_code=400, detail="Student is already linked to a different parent")
-    
+        raise HTTPException(
+            status_code=400, detail="Student is already linked to a different parent"
+        )
+
     student.parentID = parent_id
     db.commit()
     db.refresh(student)
 
     return {"message": "Parent assigned successfully"}
 
+
 @app.post("/students/{student_id}/assign_peer/{peer_id}")
 def assign_peer(student_id: int, peer_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").with_for_update().first()
-    peer = db.query(User).filter(User.id == peer_id, User.role == "student").with_for_update().first()
+    student = (
+        db.query(User)
+        .filter(User.id == student_id, User.role == "student")
+        .with_for_update()
+        .first()
+    )
+    peer = (
+        db.query(User)
+        .filter(User.id == peer_id, User.role == "student")
+        .with_for_update()
+        .first()
+    )
     if not student:
-        raise HTTPException(status_code = 404, detail = "Student not found")
+        raise HTTPException(status_code=404, detail="Student not found")
     if not peer:
-        raise HTTPException(status_code = 404, detail = "Peer not found")
+        raise HTTPException(status_code=404, detail="Peer not found")
     if student_id == peer_id:
-        raise HTTPException(status_code = 400, detail = "Cannot assign a user to be their own peer")
-    
+        raise HTTPException(
+            status_code=400, detail="Cannot assign a user to be their own peer"
+        )
+
     if student.peerID and student.peerID != peer_id:
         old_peer = db.query(User).filter(User.id == student.peerID).first()
         if old_peer:
             old_peer.peerID = None
         student.peerID = None
         db.flush()
-    
+
     if peer.peerID and peer.peerID != student_id:
         other_peer = db.query(User).filter(User.id == peer.peerID).first()
         if other_peer:
             other_peer.peerID = None
         peer.peerID = None
         db.flush()
-    
+
     student.peerID = peer_id
     peer.peerID = student_id
     db.commit()
@@ -710,27 +888,46 @@ def assign_peer(student_id: int, peer_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Peer assigned successfully"}
 
+
 @app.post("/students/{student_id}/assign_peer/{peer_id}/by/{actor_id}")
-def assign_peer_by_staff(student_id: int, peer_id: int, actor_id: int, db: Session = Depends(get_db)):
+def assign_peer_by_staff(
+    student_id: int, peer_id: int, actor_id: int, db: Session = Depends(get_db)
+):
     actor = db.query(User).filter(User.id == actor_id).first()
     if not actor:
         raise HTTPException(status_code=404, detail="Actor not found")
 
     if actor.role not in {"coach", "admin"}:
-        raise HTTPException(status_code=403, detail="Only coaches or admins can assign peers")
+        raise HTTPException(
+            status_code=403, detail="Only coaches or admins can assign peers"
+        )
 
-    student = db.query(User).filter(User.id == student_id, User.role == "student").with_for_update().first()
-    peer = db.query(User).filter(User.id == peer_id, User.role == "student").with_for_update().first()
+    student = (
+        db.query(User)
+        .filter(User.id == student_id, User.role == "student")
+        .with_for_update()
+        .first()
+    )
+    peer = (
+        db.query(User)
+        .filter(User.id == peer_id, User.role == "student")
+        .with_for_update()
+        .first()
+    )
 
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     if not peer:
         raise HTTPException(status_code=404, detail="Peer not found")
     if student_id == peer_id:
-        raise HTTPException(status_code=400, detail="Cannot assign a user to be their own peer")
+        raise HTTPException(
+            status_code=400, detail="Cannot assign a user to be their own peer"
+        )
 
     if actor.role == "coach" and student.coachID != actor.id:
-        raise HTTPException(status_code=403, detail="Coach can only assign peers for their own students")
+        raise HTTPException(
+            status_code=403, detail="Coach can only assign peers for their own students"
+        )
 
     # reuse your existing peer linking logic
     if student.peerID and student.peerID != peer_id:
@@ -755,9 +952,19 @@ def assign_peer_by_staff(student_id: int, peer_id: int, actor_id: int, db: Sessi
 
     return {"message": "Peer assigned successfully by coach/admin"}
 
-@app.post("/students/{student_id}/assessments", response_model=AssessmentResponseOut, status_code=201)
-def save_assessment_response(student_id: int, data: AssessmentResponseIn, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+
+@app.post(
+    "/students/{student_id}/assessments",
+    response_model=AssessmentResponseOut,
+    status_code=201,
+)
+def save_assessment_response(
+    student_id: int, data: AssessmentResponseIn, db: Session = Depends(get_db)
+):
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -780,24 +987,39 @@ def save_assessment_response(student_id: int, data: AssessmentResponseIn, db: Se
         submitted_at=row.submitted_at.isoformat(),
     )
 
+
 @app.post("/students/{student_id}/parent/link_or_invite")
-def link_or_invite_parent(student_id: int, data: ParentInviteIn, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+def link_or_invite_parent(
+    student_id: int, data: ParentInviteIn, db: Session = Depends(get_db)
+):
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     parent_email = _normalize_email(str(data.parent_email))
 
     if student.parentID:
-        existing_linked_parent = db.query(User).filter(User.id == student.parentID, User.role == "parent").first()
+        existing_linked_parent = (
+            db.query(User)
+            .filter(User.id == student.parentID, User.role == "parent")
+            .first()
+        )
         if existing_linked_parent and existing_linked_parent.email != parent_email:
-            raise HTTPException(status_code=400, detail="Student is already linked to a different parent")
+            raise HTTPException(
+                status_code=400,
+                detail="Student is already linked to a different parent",
+            )
 
     existing_parent = db.query(User).filter(User.email == parent_email).first()
 
     if existing_parent:
         if existing_parent.role != "parent":
-            raise HTTPException(status_code=400, detail="Existing user with this email is not a parent")
+            raise HTTPException(
+                status_code=400, detail="Existing user with this email is not a parent"
+            )
 
         student.parentID = existing_parent.id
         db.commit()
@@ -806,14 +1028,14 @@ def link_or_invite_parent(student_id: int, data: ParentInviteIn, db: Session = D
         return {
             "message": "Existing parent linked successfully",
             "student_id": student.id,
-            "parent_id": existing_parent.id
+            "parent_id": existing_parent.id,
         }
 
     invite = ParentInvite(
         student_id=student_id,
         parent_email=parent_email,
         parent_full_name=data.parent_full_name,
-        status="pending"
+        status="pending",
     )
     db.add(invite)
     db.commit()
@@ -823,12 +1045,16 @@ def link_or_invite_parent(student_id: int, data: ParentInviteIn, db: Session = D
         "message": "Parent invite created",
         "invite_id": invite.id,
         "parent_email": invite.parent_email,
-        "status": invite.status
+        "status": invite.status,
     }
+
 
 @app.get("/students/{student_id}/parent_invites", response_model=List[ParentInviteOut])
 def get_student_parent_invites(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -851,9 +1077,11 @@ def get_student_parent_invites(student_id: int, db: Session = Depends(get_db)):
         for invite in invites
     ]
 
+
 @app.get("/parents/{parent_id}/invites", response_model=List[ParentInviteOut])
 def get_parent_invites(parent_id: int, db: Session = Depends(get_db)):
-    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    parent = db.query(User).filter(User.id == parent_id,
+                                   User.role == "parent").first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
 
@@ -876,28 +1104,44 @@ def get_parent_invites(parent_id: int, db: Session = Depends(get_db)):
         for invite in invites
     ]
 
+
 @app.post("/parent_invites/{invite_id}/accept/{parent_id}")
 def accept_parent_invite(invite_id: int, parent_id: int, db: Session = Depends(get_db)):
-    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+    parent = db.query(User).filter(User.id == parent_id,
+                                   User.role == "parent").first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
 
-    invite = db.query(ParentInvite).filter(ParentInvite.id == invite_id).with_for_update().first()
+    invite = (
+        db.query(ParentInvite)
+        .filter(ParentInvite.id == invite_id)
+        .with_for_update()
+        .first()
+    )
     if not invite:
         raise HTTPException(status_code=404, detail="Invite not found")
 
     if invite.status != "pending":
-        raise HTTPException(status_code=400, detail="Invite has already been processed")
+        raise HTTPException(
+            status_code=400, detail="Invite has already been processed")
 
     if invite.parent_email != parent.email:
-        raise HTTPException(status_code=403, detail="This invite does not belong to this parent")
+        raise HTTPException(
+            status_code=403, detail="This invite does not belong to this parent"
+        )
 
-    student = db.query(User).filter(User.id == invite.student_id, User.role == "student").first()
+    student = (
+        db.query(User)
+        .filter(User.id == invite.student_id, User.role == "student")
+        .first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     if student.parentID and student.parentID != parent.id:
-        raise HTTPException(status_code=400, detail="Student is already linked to a different parent")
+        raise HTTPException(
+            status_code=400, detail="Student is already linked to a different parent"
+        )
 
     student.parentID = parent.id
     invite.status = "accepted"
@@ -923,21 +1167,29 @@ def accept_parent_invite(invite_id: int, parent_id: int, db: Session = Depends(g
         "status": invite.status,
     }
 
+
 @app.post("/parent_invites/{invite_id}/decline/{parent_id}")
-def decline_parent_invite(invite_id: int, parent_id: int, db: Session = Depends(get_db)):
-    parent = db.query(User).filter(User.id == parent_id, User.role == "parent").first()
+def decline_parent_invite(
+    invite_id: int, parent_id: int, db: Session = Depends(get_db)
+):
+    parent = db.query(User).filter(User.id == parent_id,
+                                   User.role == "parent").first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
 
-    invite = db.query(ParentInvite).filter(ParentInvite.id == invite_id).first()
+    invite = db.query(ParentInvite).filter(
+        ParentInvite.id == invite_id).first()
     if not invite:
         raise HTTPException(status_code=404, detail="Invite not found")
 
     if invite.parent_email != parent.email:
-        raise HTTPException(status_code=403, detail="This invite does not belong to this parent")
+        raise HTTPException(
+            status_code=403, detail="This invite does not belong to this parent"
+        )
 
     if invite.status != "pending":
-        raise HTTPException(status_code=400, detail="Invite has already been processed")
+        raise HTTPException(
+            status_code=400, detail="Invite has already been processed")
 
     invite.status = "declined"
     db.commit()
@@ -949,9 +1201,15 @@ def decline_parent_invite(invite_id: int, parent_id: int, db: Session = Depends(
         "status": invite.status,
     }
 
-@app.get("/students/{student_id}/assessments", response_model=List[AssessmentResponseOut])
+
+@app.get(
+    "/students/{student_id}/assessments", response_model=List[AssessmentResponseOut]
+)
 def list_assessment_responses(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -974,9 +1232,15 @@ def list_assessment_responses(student_id: int, db: Session = Depends(get_db)):
         for row in responses
     ]
 
+
 @app.post("/students/{student_id}/profile", response_model=StudentProfileOut)
-def save_student_profile(student_id: int, data: StudentProfileIn, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+def save_student_profile(
+    student_id: int, data: StudentProfileIn, db: Session = Depends(get_db)
+):
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -992,12 +1256,19 @@ def save_student_profile(student_id: int, data: StudentProfileIn, db: Session = 
         fullName=student.fullName,
         age=student.student_age,
         bio=student.student_bio,
-        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+        goals=(
+            json.loads(
+                student.student_goals_json) if student.student_goals_json else []
+        ),
     )
 
+
 @app.post("/coaches/{coach_id}/profile", response_model=CoachProfileOut)
-def save_coach_profile(coach_id: int, data: CoachProfileIn, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+def save_coach_profile(
+    coach_id: int, data: CoachProfileIn, db: Session = Depends(get_db)
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
@@ -1013,12 +1284,19 @@ def save_coach_profile(coach_id: int, data: CoachProfileIn, db: Session = Depend
         fullName=coach.fullName,
         age=coach.coach_age,
         bio=coach.coach_bio,
-        expertise=json.loads(coach.coach_expertise_json) if coach.coach_expertise_json else [],
+        expertise=(
+            json.loads(
+                coach.coach_expertise_json) if coach.coach_expertise_json else []
+        ),
     )
+
 
 @app.get("/students/{student_id}/profile", response_model=StudentProfileOut)
 def get_student_profile(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -1027,12 +1305,17 @@ def get_student_profile(student_id: int, db: Session = Depends(get_db)):
         fullName=student.fullName,
         age=student.student_age,
         bio=student.student_bio,
-        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+        goals=(
+            json.loads(
+                student.student_goals_json) if student.student_goals_json else []
+        ),
     )
+
 
 @app.get("/coaches/{coach_id}/profile", response_model=CoachProfileOut)
 def get_coach_profile(coach_id: int, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
@@ -1041,19 +1324,30 @@ def get_coach_profile(coach_id: int, db: Session = Depends(get_db)):
         fullName=coach.fullName,
         age=coach.coach_age,
         bio=coach.coach_bio,
-        expertise=json.loads(coach.coach_expertise_json) if coach.coach_expertise_json else [],
+        expertise=(
+            json.loads(
+                coach.coach_expertise_json) if coach.coach_expertise_json else []
+        ),
     )
+
 
 @app.get("/students/{student_id}/parent")
 def get_student_parent(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     if not student.parentID:
         return {"parent": None}
 
-    parent = db.query(User).filter(User.id == student.parentID, User.role == "parent").first()
+    parent = (
+        db.query(User)
+        .filter(User.id == student.parentID, User.role == "parent")
+        .first()
+    )
     if not parent:
         return {"parent": None}
 
@@ -1068,14 +1362,20 @@ def get_student_parent(student_id: int, db: Session = Depends(get_db)):
 
 @app.get("/students/{student_id}/peer")
 def get_student_peer(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     if not student.peerID:
         return {"peer": None}
 
-    peer = db.query(User).filter(User.id == student.peerID, User.role == "student").first()
+    peer = (
+        db.query(User).filter(User.id == student.peerID,
+                              User.role == "student").first()
+    )
     if not peer:
         return {"peer": None}
 
@@ -1090,8 +1390,15 @@ def get_student_peer(student_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/students/{student_id}/peer/recommendation")
-def recommend_peer(student_id: int, exclude_ids: Optional[str] = Query(None), db: Session = Depends(get_db)):
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+def recommend_peer(
+    student_id: int,
+    exclude_ids: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -1105,14 +1412,20 @@ def recommend_peer(student_id: int, exclude_ids: Optional[str] = Query(None), db
             if part.strip().isdigit()
         }
 
-    candidates = db.query(User).filter(
-        User.role == "student",
-        User.id != student_id,
-        User.peerID.is_(None),
-    ).all()
+    candidates = (
+        db.query(User)
+        .filter(
+            User.role == "student",
+            User.id != student_id,
+            User.peerID.is_(None),
+        )
+        .all()
+    )
 
     if excluded_set:
-        candidates = [candidate for candidate in candidates if candidate.id not in excluded_set]
+        candidates = [
+            candidate for candidate in candidates if candidate.id not in excluded_set
+        ]
 
     # If the student has no parseable age, return the first available candidate.
     if student_age is None:
@@ -1136,7 +1449,8 @@ def recommend_peer(student_id: int, exclude_ids: Optional[str] = Query(None), db
         try:
             parsed_goals = json.loads(candidate.student_goals_json)
             if isinstance(parsed_goals, list):
-                goals = [str(item) for item in parsed_goals if str(item).strip()]
+                goals = [str(item)
+                         for item in parsed_goals if str(item).strip()]
         except (TypeError, ValueError):
             goals = []
 
@@ -1150,52 +1464,80 @@ def recommend_peer(student_id: int, exclude_ids: Optional[str] = Query(None), db
         }
     }
 
+
 @app.get("/coaches/{coach_id}/students/{student_id}/action_items")
-def get_student_action_items(coach_id: int, student_id: int, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role =="coach").first()
+def get_student_action_items(
+    coach_id: int, student_id: int, db: Session = Depends(get_db)
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
-        raise HTTPException(status_code = 404, detail = "Coach not found")
+        raise HTTPException(status_code=404, detail="Coach not found")
 
     if DEMO_ALL_STUDENTS_FOR_COACH:
-        student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+        student = (
+            db.query(User).filter(User.id == student_id,
+                                  User.role == "student").first()
+        )
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
     else:
-        student = db.query(User).filter(User.id == student_id, User.coachID == coach_id).first()
+        student = (
+            db.query(User)
+            .filter(User.id == student_id, User.coachID == coach_id)
+            .first()
+        )
         if not student:
-            raise HTTPException(status_code = 403, detail = "Student is not assigned to this coach")
+            raise HTTPException(
+                status_code=403, detail="Student is not assigned to this coach"
+            )
 
     return [
         {
             "id": ai.id,
             "title": ai.title,
             "description": ai.description,
-            "completed": ai.completed
+            "completed": ai.completed,
+            "priority": ai.priority,
+            "assigned_by_id": ai.assigned_by_id,
+            "assigned_by_name": ai.assigned_by.fullName if ai.assigned_by else "Coach",
+            "due_date": ai.due_date.isoformat() if ai.due_date else None,
+            "due_time": ai.due_time.strftime("%H:%M") if ai.due_time else None,
         }
         for ai in student.action_items
     ]
 
-@app.get("/coaches/{coach_id}/students/{student_id}", response_model=CoachStudentDetailOut)
-def get_coach_student_detail(coach_id: int, student_id: int, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+
+@app.get(
+    "/coaches/{coach_id}/students/{student_id}", response_model=CoachStudentDetailOut
+)
+def get_coach_student_detail(
+    coach_id: int, student_id: int, db: Session = Depends(get_db)
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
     if DEMO_ALL_STUDENTS_FOR_COACH:
-        student = db.query(User).filter(
-            User.id == student_id,
-            User.role == "student"
-        ).first()
+        student = (
+            db.query(User).filter(User.id == student_id,
+                                  User.role == "student").first()
+        )
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
     else:
-        student = db.query(User).filter(
-            User.id == student_id,
-            User.role == "student",
-            User.coachID == coach_id
-        ).first()
+        student = (
+            db.query(User)
+            .filter(
+                User.id == student_id, User.role == "student", User.coachID == coach_id
+            )
+            .first()
+        )
         if not student:
-            raise HTTPException(status_code=403, detail="Student is not assigned to this coach")
+            raise HTTPException(
+                status_code=403, detail="Student is not assigned to this coach"
+            )
 
     return CoachStudentDetailOut(
         id=student.id,
@@ -1203,86 +1545,126 @@ def get_coach_student_detail(coach_id: int, student_id: int, db: Session = Depen
         email=student.email,
         age=student.student_age,
         bio=student.student_bio,
-        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+        goals=(
+            json.loads(
+                student.student_goals_json) if student.student_goals_json else []
+        ),
         action_items=[
             {
                 "id": ai.id,
                 "title": ai.title,
                 "description": ai.description,
                 "completed": ai.completed,
+                "priority": ai.priority,
+                "assigned_by_id": ai.assigned_by_id,
+                "assigned_by_name": ai.assigned_by.fullName if ai.assigned_by else "Coach",
+                "due_date": ai.due_date.isoformat() if ai.due_date else None,
+                "due_time": ai.due_time.strftime("%H:%M") if ai.due_time else None,
             }
             for ai in student.action_items
         ],
     )
 
+
 @app.get("/peers/{peer_id}/students/{student_id}", response_model=PeerStudentDetailOut)
-def get_peer_student_detail(peer_id: int, student_id: int, db: Session = Depends(get_db)):
-    peer = db.query(User).filter(User.id == peer_id, User.role == "student").first()
+def get_peer_student_detail(
+    peer_id: int, student_id: int, db: Session = Depends(get_db)
+):
+    peer = db.query(User).filter(User.id == peer_id,
+                                 User.role == "student").first()
     if not peer:
         raise HTTPException(status_code=404, detail="Peer not found")
 
     if peer.peerID != student_id:
-        raise HTTPException(status_code=403, detail="Student is not assigned to this peer")
-    
-    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+        raise HTTPException(
+            status_code=403, detail="Student is not assigned to this peer"
+        )
+
+    student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    
+
     return PeerStudentDetailOut(
         id=student.id,
         fullName=student.fullName,
         email=student.email,
         age=student.student_age,
         bio=student.student_bio,
-        goals=json.loads(student.student_goals_json) if student.student_goals_json else [],
+        goals=(
+            json.loads(
+                student.student_goals_json) if student.student_goals_json else []
+        ),
         action_items=[
             {
                 "id": ai.id,
                 "title": ai.title,
                 "description": ai.description,
                 "completed": ai.completed,
+                "priority": ai.priority,
+                "assigned_by_id": ai.assigned_by_id,
+                "assigned_by_name": ai.assigned_by.fullName if ai.assigned_by else "Coach",
+                "due_date": ai.due_date.isoformat() if ai.due_date else None,
+                "due_time": ai.due_time.strftime("%H:%M") if ai.due_time else None,
             }
-             for ai in student.action_items
+            for ai in student.action_items
         ],
     )
 
-@app.post("/coaches/{coach_id}/availability", response_model = AvailabilityOut)
-def add_availability(coach_id: int, slot: AvailabilityIn, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
-    from datetime import datetime
+
+@app.post("/coaches/{coach_id}/availability", response_model=AvailabilityOut)
+def add_availability(
+    coach_id: int, slot: AvailabilityIn, db: Session = Depends(get_db)
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
 
     selected_date = datetime.strptime(slot.date, "%Y-%m-%d").date()
 
     if selected_date < date.today():
-        raise HTTPException(status_code=400, detail="Cannot set availability in the past.")
+        raise HTTPException(
+            status_code=400, detail="Cannot set availability in the past."
+        )
 
     if not coach:
-        raise HTTPException(status_code = 404, detail = "Coach not found")
-    try:  
+        raise HTTPException(status_code=404, detail="Coach not found")
+    try:
         parsed_date = datetime.strptime(slot.date, "%Y-%m-%d").date()
         parsed_start = datetime.strptime(slot.start_time, "%H:%M").time()
     except ValueError:
-        raise HTTPException(status_code=400, detail = "Invalid date or time format") 
-    
-    if parsed_start.minute != 0:
-        raise HTTPException(status_code = 400, detail = "Availability must start on the hour (e.g. 14:00)")
-    
-    parsed_end = (datetime.combine(parsed_date, parsed_start) + timedelta(hours=1)).time()
+        raise HTTPException(
+            status_code=400, detail="Invalid date or time format")
 
-    exists = db.query(CoachAvailability).filter(
-        CoachAvailability.coach_id == coach_id,
-        CoachAvailability.date == parsed_date,
-        CoachAvailability.start_time == parsed_start
-    ).first()
+    if parsed_start.minute != 0:
+        raise HTTPException(
+            status_code=400, detail="Availability must start on the hour (e.g. 14:00)"
+        )
+
+    parsed_end = (
+        datetime.combine(parsed_date, parsed_start) + timedelta(hours=1)
+    ).time()
+
+    exists = (
+        db.query(CoachAvailability)
+        .filter(
+            CoachAvailability.coach_id == coach_id,
+            CoachAvailability.date == parsed_date,
+            CoachAvailability.start_time == parsed_start,
+        )
+        .first()
+    )
 
     if exists:
-        raise HTTPException(status_code=400, detail="Availability already exists")
+        raise HTTPException(
+            status_code=400, detail="Availability already exists")
 
     appointment_slot = CoachAvailability(
-        coach_id = coach_id,
-        date = parsed_date,
-        start_time = parsed_start,
-        end_time = parsed_end,
+        coach_id=coach_id,
+        date=parsed_date,
+        start_time=parsed_start,
+        end_time=parsed_end,
     )
 
     db.add(appointment_slot)
@@ -1290,15 +1672,17 @@ def add_availability(coach_id: int, slot: AvailabilityIn, db: Session = Depends(
     db.refresh(appointment_slot)
 
     return AvailabilityOut(
-        id = appointment_slot.id,
-        date = appointment_slot.date.isoformat(),
-        start_time = appointment_slot.start_time.strftime("%H:%M"),
-        end_time = appointment_slot.end_time.strftime("%H:%M")
+        id=appointment_slot.id,
+        date=appointment_slot.date.isoformat(),
+        start_time=appointment_slot.start_time.strftime("%H:%M"),
+        end_time=appointment_slot.end_time.strftime("%H:%M"),
     )
+
 
 @app.get("/coaches/{coach_id}/availability", response_model=List[AvailabilityOut])
 def get_availability(coach_id: int, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
@@ -1307,10 +1691,38 @@ def get_availability(coach_id: int, db: Session = Depends(get_db)):
             id=slot.id,
             date=slot.date.isoformat(),
             start_time=slot.start_time.strftime("%H:%M"),
-            end_time=slot.end_time.strftime("%H:%M")
+            end_time=slot.end_time.strftime("%H:%M"),
         )
         for slot in coach.availability_slots
     ]
+
+
+@app.delete("/coaches/{coach_id}/availability/{availability_id}")
+def delete_availability(
+    coach_id: int, availability_id: int, db: Session = Depends(get_db)
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    slot = (
+        db.query(CoachAvailability)
+        .filter(
+            CoachAvailability.id == availability_id,
+            CoachAvailability.coach_id == coach_id,
+        )
+        .first()
+    )
+    if not slot:
+        raise HTTPException(
+            status_code=404, detail="Availability slot not found")
+
+    db.delete(slot)
+    db.commit()
+
+    return {"message": "Availability removed successfully"}
+
 
 @app.get("/coaches/filter")
 def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
@@ -1318,7 +1730,8 @@ def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
         parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
         parsed_time = datetime.strptime(time, "%H:%M").time()
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date or time format")
+        raise HTTPException(
+            status_code=400, detail="Invalid date or time format")
 
     available_coaches = (
         db.query(User)
@@ -1327,70 +1740,115 @@ def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
             User.role == "coach",
             CoachAvailability.date == parsed_date,
             CoachAvailability.start_time <= parsed_time,
-            CoachAvailability.end_time >= parsed_time
+            CoachAvailability.end_time >= parsed_time,
         )
         .all()
     )
 
     return [
-        {
-            "id": coach.id,
-            "email": coach.email,
-            "fullName": coach.fullName
-        }
+        {"id": coach.id, "email": coach.email, "fullName": coach.fullName}
         for coach in available_coaches
     ]
 
+
 @app.get("/peers/filter")
 def filter_peers(goal: str, student_id: int, db: Session = Depends(get_db)):
-        check_student = db.query(User).filter(User.id == student_id, User.role == "student").first()
-        if not check_student:
-            raise HTTPException(status_code=403, detail="Only students can filter peers")
+    check_student = (
+        db.query(User).filter(User.id == student_id,
+                              User.role == "student").first()
+    )
+    if not check_student:
+        raise HTTPException(
+            status_code=403, detail="Only students can filter peers")
 
-        students = db.query(User).filter(
-            User.role == "student",
-            User.id != student_id
-        ).all()
+    students = (
+        db.query(User).filter(User.role == "student",
+                              User.id != student_id).all()
+    )
 
-        matching = []
-        for s in students:
-            try:
-                goals = json.loads(s.student_goals_json)
-                if goal in goals:
-                    matching.append(s)
-            except (TypeError, ValueError):
-                continue
+    matching = []
+    for s in students:
+        try:
+            goals = json.loads(s.student_goals_json)
+            if goal in goals:
+                matching.append(s)
+        except (TypeError, ValueError):
+            continue
 
-        return [
-            {
-                "id": s.id,
-                "email": s.email,
-                "fullName": s.fullName,
-                "goals": json.loads(s.student_goals_json)
-            }
-            for s in matching
-        ]
+    return [
+        {
+            "id": s.id,
+            "email": s.email,
+            "fullName": s.fullName,
+            "goals": json.loads(s.student_goals_json),
+        }
+        for s in matching
+    ]
 
 
-@app.post("/coaches/{coach_id}/students/{student_id}/action_items", response_model=ActionItemOut, status_code=201)
-def create_student_action_item(coach_id: int, student_id: int, data: ActionItemCreate, db: Session = Depends(get_db)):
-    coach = db.query(User).filter(User.id == coach_id, User.role == "coach").first()
+@app.post(
+    "/coaches/{coach_id}/students/{student_id}/action_items",
+    response_model=ActionItemOut,
+    status_code=201,
+)
+def create_student_action_item(
+    coach_id: int,
+    student_id: int,
+    data: ActionItemCreate,
+    db: Session = Depends(get_db),
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
-    student = db.query(User).filter(
-        User.id == student_id,
-        User.role == "student",
-        User.coachID == coach_id
-    ).first()
+    student = (
+        db.query(User)
+        .filter(User.id == student_id, User.role == "student", User.coachID == coach_id)
+        .first()
+    )
     if not student:
-        raise HTTPException(status_code=403, detail="Student is not assigned to this coach")
+        raise HTTPException(
+            status_code=403, detail="Student is not assigned to this coach"
+        )
+
+    parsed_due_date = None
+    parsed_due_time = None
+
+    if data.due_date:
+        try:
+            parsed_due_date = datetime.strptime(
+                data.due_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail="Invalid due_date format. Use YYYY-MM-DD.")
+
+        if parsed_due_date < date.today():
+            raise HTTPException(
+                status_code=400, detail="Due date cannot be in the past.")
+
+    if data.due_time:
+        try:
+            parsed_due_time = datetime.strptime(data.due_time, "%H:%M").time()
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail="Invalid due_time format. Use HH:MM.")
+
+    if parsed_due_date and parsed_due_time:
+        due_datetime = datetime.combine(parsed_due_date, parsed_due_time)
+        if due_datetime < datetime.now():
+            raise HTTPException(
+                status_code=400, detail="Due date/time cannot be in the past.")
 
     item = ActionItem(
         user_id=student_id,
+        assigned_by_id=coach_id,
         title=data.title,
         description=data.description,
-        completed=False
+        completed=False,
+        priority=(data.priority or "medium").strip().lower(),
+        due_date=parsed_due_date,
+        due_time=parsed_due_time,
     )
     db.add(item)
     db.commit()
@@ -1401,22 +1859,161 @@ def create_student_action_item(coach_id: int, student_id: int, data: ActionItemC
         user_id=item.user_id,
         title=item.title,
         description=item.description,
-        completed=item.completed
+        completed=item.completed,
+        priority=item.priority,
+        assigned_by_id=item.assigned_by_id,
+        assigned_by_name=item.assigned_by.fullName if item.assigned_by else "Coach",
+        due_date=item.due_date.isoformat() if item.due_date else None,
+        due_time=item.due_time.strftime("%H:%M") if item.due_time else None,
     )
+
+
+@app.patch(
+    "/coaches/{coach_id}/students/{student_id}/action_items/{action_item_id}",
+    response_model=ActionItemOut,
+)
+def update_student_action_item(
+    coach_id: int,
+    student_id: int,
+    action_item_id: int,
+    data: ActionItemUpdate,
+    db: Session = Depends(get_db),
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    student = (
+        db.query(User)
+        .filter(User.id == student_id, User.role == "student", User.coachID == coach_id)
+        .first()
+    )
+    if not student:
+        raise HTTPException(
+            status_code=403, detail="Student is not assigned to this coach"
+        )
+
+    item = (
+        db.query(ActionItem)
+        .filter(ActionItem.id == action_item_id, ActionItem.user_id == student_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(
+            status_code=404, detail="Action item not found for this student"
+        )
+
+    if data.title is not None:
+        item.title = data.title.strip()
+    if data.description is not None:
+        item.description = data.description.strip()
+    if data.priority is not None:
+        item.priority = data.priority.strip().lower()
+
+    if data.due_date is not None:
+        if data.due_date == "":
+            item.due_date = None
+        else:
+            try:
+                parsed_due_date = datetime.strptime(
+                    data.due_date, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(
+                    status_code=400, detail="Invalid due_date format. Use YYYY-MM-DD.")
+            if parsed_due_date < date.today():
+                raise HTTPException(
+                    status_code=400, detail="Due date cannot be in the past.")
+            item.due_date = parsed_due_date
+
+    if data.due_time is not None:
+        if data.due_time == "":
+            item.due_time = None
+        else:
+            try:
+                parsed_due_time = datetime.strptime(
+                    data.due_time, "%H:%M").time()
+            except ValueError:
+                raise HTTPException(
+                    status_code=400, detail="Invalid due_time format. Use HH:MM.")
+            item.due_time = parsed_due_time
+
+    if item.due_date and item.due_time:
+        due_datetime = datetime.combine(item.due_date, item.due_time)
+        if due_datetime < datetime.now():
+            raise HTTPException(
+                status_code=400, detail="Due date/time cannot be in the past.")
+
+    db.commit()
+    db.refresh(item)
+
+    return ActionItemOut(
+        id=item.id,
+        user_id=item.user_id,
+        title=item.title,
+        description=item.description,
+        completed=item.completed,
+        priority=item.priority,
+        assigned_by_id=item.assigned_by_id,
+        assigned_by_name=item.assigned_by.fullName if item.assigned_by else "Coach",
+        due_date=item.due_date.isoformat() if item.due_date else None,
+        due_time=item.due_time.strftime("%H:%M") if item.due_time else None,
+    )
+
+
+@app.delete("/coaches/{coach_id}/students/{student_id}/action_items/{action_item_id}")
+def delete_student_action_item(
+    coach_id: int, student_id: int, action_item_id: int, db: Session = Depends(get_db)
+):
+    coach = db.query(User).filter(
+        User.id == coach_id, User.role == "coach").first()
+    if not coach:
+        raise HTTPException(status_code=404, detail="Coach not found")
+
+    student = (
+        db.query(User)
+        .filter(User.id == student_id, User.role == "student", User.coachID == coach_id)
+        .first()
+    )
+    if not student:
+        raise HTTPException(
+            status_code=403, detail="Student is not assigned to this coach"
+        )
+
+    item = (
+        db.query(ActionItem)
+        .filter(ActionItem.id == action_item_id, ActionItem.user_id == student_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(
+            status_code=404, detail="Action item not found for this student"
+        )
+
+    db.delete(item)
+    db.commit()
+
+    return {"message": "Action item deleted successfully"}
+
 
 @app.post("/appointments/book")
 def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
-    from datetime import date
-
     selected_date = datetime.strptime(booking.date, "%Y-%m-%d").date()
 
     if selected_date < date.today():
         raise HTTPException(status_code=400, detail="Cannot book past dates.")
-        
-    student = db.query(User).filter(User.id == booking.student_id, User.role == "student").first()
+
+    student = (
+        db.query(User)
+        .filter(User.id == booking.student_id, User.role == "student")
+        .first()
+    )
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    coach = db.query(User).filter(User.id == booking.coach_id, User.role == "coach").first()
+    coach = (
+        db.query(User).filter(User.id == booking.coach_id,
+                              User.role == "coach").first()
+    )
     if not coach:
         raise HTTPException(status_code=404, detail="Coach not found")
 
@@ -1424,7 +2021,8 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
         requested_date = datetime.strptime(booking.date, "%Y-%m-%d").date()
         requested_time = datetime.strptime(booking.time, "%H:%M").time()
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date or time format")
+        raise HTTPException(
+            status_code=400, detail="Invalid date or time format")
 
     slot = (
         db.query(CoachAvailability)
@@ -1432,21 +2030,22 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
             CoachAvailability.coach_id == booking.coach_id,
             CoachAvailability.date == requested_date,
             CoachAvailability.start_time <= requested_time,
-            CoachAvailability.end_time > requested_time
+            CoachAvailability.end_time > requested_time,
         )
         .with_for_update()
         .first()
     )
 
     if not slot:
-        raise HTTPException(status_code=400, detail="Coach not available at this time")
-    
+        raise HTTPException(
+            status_code=400, detail="Coach not available at this time")
+
     appointment_datetime = datetime.combine(requested_date, requested_time)
     new_appointment = Appointment(
-        student_id = booking.student_id,
-        coach_id = booking.coach_id,
-        title = "Coaching Session",
-        scheduledAt = appointment_datetime
+        student_id=booking.student_id,
+        coach_id=booking.coach_id,
+        title="Coaching Session",
+        scheduledAt=appointment_datetime,
     )
 
     db.add(new_appointment)
@@ -1460,25 +2059,27 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
         "student_id": new_appointment.student_id,
         "coach_id": new_appointment.coach_id,
         "title": new_appointment.title,
-        "scheduledAt": new_appointment.scheduledAt.isoformat()
+        "scheduledAt": new_appointment.scheduledAt.isoformat(),
     }
+
 
 @app.post("/users/{user_id}/set_archetype")
 def set_archetype(user_id: int, data: ArchetypeIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code = 404, detail = "User not found")
-    
+        raise HTTPException(status_code=404, detail="User not found")
+
     user.archetype = data.archetype
     db.commit()
     db.refresh(user)
-    
+
     return {"message": "Archetype updated successfully"}
+
 
 @app.get("/users/{user_id}/archetype")
 def get_archetype(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     return {"user_id": user.id, "archetype": user.archetype}

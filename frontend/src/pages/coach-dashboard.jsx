@@ -5,9 +5,13 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function formatAppointmentCard(scheduledAt, studentName = "Student") {
   const d = new Date(scheduledAt);
+
   return {
     id: `${scheduledAt}-${studentName}`,
     name: studentName,
+    scheduledAt,
+    rawDate: scheduledAt.slice(0, 10),
+    rawTime: scheduledAt.slice(11, 16),
     date: d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -50,12 +54,21 @@ function CoachDashboard() {
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState("");
+  const [availabilityToRemove, setAvailabilityToRemove] = useState(null);
+  const [showRemoveAvailabilityConfirm, setShowRemoveAvailabilityConfirm] = useState(false);
+  const [availabilityActionType, setAvailabilityActionType] = useState(null); // "add" | "remove" | null
+  const [pendingAvailabilityHour, setPendingAvailabilityHour] = useState(null);
 
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskSaving, setTaskSaving] = useState(false);
   const [taskMessage, setTaskMessage] = useState("");
+  const [taskPriority, setTaskPriority] = useState("medium");
+  const [taskDueDate, setTaskDueDate] = useState("");
+  const [taskDueTime, setTaskDueTime] = useState("");
+  const [showStudentPicker, setShowStudentPicker] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
 
   const navigate = useNavigate();
 
@@ -84,6 +97,29 @@ function CoachDashboard() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!availabilityMessage) return;
+
+    const timer = setTimeout(() => {
+      setAvailabilityMessage("");
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [availabilityMessage]);
+
+  function getPriorityColor(priority) {
+    switch ((priority || "").toLowerCase()) {
+      case "high":
+        return "#121c34";
+      case "medium":
+        return "#394c7a";
+      case "low":
+        return "rgb(78, 175, 205)";
+      default:
+        return "#add8e6";
+    }
+  }
+
   async function loadStudents(coachId) {
     setStudentsLoading(true);
     setStudentsError("");
@@ -102,7 +138,7 @@ function CoachDashboard() {
       setStudents(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load students:", err);
-      setStudentsError("Could not connect to backend for students.");
+      setStudentsError("Error loading students.");
       setStudents([]);
     } finally {
       setStudentsLoading(false);
@@ -140,12 +176,12 @@ function CoachDashboard() {
         .map((appt) =>
           formatAppointmentCard(appt.scheduledAt, studentMap[appt.student_id] || `Student ${appt.student_id}`)
         )
-        .sort((a, b) => new Date(`${a.date} ${a.time}`) - new Date(`${b.date} ${b.time}`));
+        .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
       setAppointments(mapped);
     } catch (err) {
       console.error("Failed to load appointments:", err);
-      setAppointmentsError("Could not connect to backend for appointments.");
+      setAppointmentsError("Error loading appointments.");
       setAppointments([]);
     } finally {
       setAppointmentsLoading(false);
@@ -209,7 +245,79 @@ function CoachDashboard() {
       await loadAvailability(coachUser.id);
     } catch (err) {
       console.error("Failed to save availability:", err);
-      setAvailabilityMessage("Could not connect to backend to save availability.");
+      setAvailabilityMessage("Error trying to save availability.");
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  }
+
+  async function handleConfirmAddAvailability() {
+    if (pendingAvailabilityHour == null) return;
+
+    await handleAddAvailability(pendingAvailabilityHour);
+
+    setPendingAvailabilityHour(null);
+    setAvailabilityToRemove(null);
+    setAvailabilityActionType(null);
+    setShowRemoveAvailabilityConfirm(false);
+  }
+
+  function openAvailabilityConfirm(hour) {
+    if (!selectedAvailabilityDate) {
+      setAvailabilityMessage("Please select a date first.");
+      return;
+    }
+
+    const timeValue = `${String(hour).padStart(2, "0")}:00`;
+    const existingSlot = slotsForSelectedDate.find((slot) => slot.start_time === timeValue);
+
+    if (existingSlot) {
+      setAvailabilityToRemove(existingSlot);
+      setAvailabilityActionType("remove");
+      setShowRemoveAvailabilityConfirm(true);
+      return;
+    }
+
+    setPendingAvailabilityHour(hour);
+    setAvailabilityActionType("add");
+    setShowRemoveAvailabilityConfirm(true);
+  }
+
+  async function handleRemoveAvailability() {
+    if (!coachUser?.id || !availabilityToRemove?.id) return;
+
+    setAvailabilityLoading(true);
+    setAvailabilityMessage("");
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/coaches/${coachUser.id}/availability/${availabilityToRemove.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAvailabilityMessage(data.detail || "Could not remove availability.");
+        setAvailabilityLoading(false);
+        return;
+      }
+
+      setAvailabilityMessage(
+        `Removed availability for ${availabilityToRemove.date} at ${availabilityToRemove.start_time}.`
+      );
+
+      setShowRemoveAvailabilityConfirm(false);
+      setAvailabilityToRemove(null);
+      setPendingAvailabilityHour(null);
+      setAvailabilityActionType(null);
+
+      await loadAvailability(coachUser.id);
+    } catch (err) {
+      console.error("Failed to remove availability:", err);
+      setAvailabilityMessage("Error trying to remove availability.");
     } finally {
       setAvailabilityLoading(false);
     }
@@ -223,6 +331,40 @@ function CoachDashboard() {
     );
   }
 
+  const filteredStudents = students.filter((student) => {
+    const label = (student.fullName || student.name || student.email || "").toLowerCase();
+    return label.includes(studentSearch.toLowerCase());
+  });
+
+  const allStudentsSelected =
+    students.length > 0 && selectedStudentIds.length === students.length;
+
+  function toggleSelectAllStudents() {
+    if (allStudentsSelected) {
+      setSelectedStudentIds([]);
+    } else {
+      setSelectedStudentIds(students.map((student) => student.id));
+    }
+  }
+
+  function getStudentSelectionLabel() {
+    if (selectedStudentIds.length === 0) return "Choose students";
+    if (students.length > 0 && selectedStudentIds.length === students.length) {
+      return "All students selected";
+    }
+    if (selectedStudentIds.length === 1) return "1 student selected";
+    return `${selectedStudentIds.length} students selected`;
+  }
+
+  function isPastDueDateTime(dateStr, timeStr) {
+    if (!dateStr || !timeStr) return false;
+
+    const selected = new Date(`${dateStr}T${timeStr}`);
+    const now = new Date();
+
+    return selected < now;
+  }
+
   async function handleAssignTasks() {
     if (!coachUser?.id) return;
 
@@ -233,6 +375,16 @@ function CoachDashboard() {
 
     if (!taskTitle.trim() || !taskDescription.trim()) {
       setTaskMessage("Please enter both a title and description.");
+      return;
+    }
+
+    if (!taskDueDate || !taskDueTime) {
+      setTaskMessage("Please enter a due date and time.");
+      return;
+    }
+
+    if (isPastDueDateTime(taskDueDate, taskDueTime)) {
+      setTaskMessage("Due date and time cannot be in the past.");
       return;
     }
 
@@ -250,6 +402,9 @@ function CoachDashboard() {
             body: JSON.stringify({
               title: taskTitle.trim(),
               description: taskDescription.trim(),
+              priority: taskPriority,
+              due_date: taskDueDate,
+              due_time: taskDueTime,
             }),
           }).then(async (res) => {
             const data = await res.json().catch(() => ({}));
@@ -268,15 +423,30 @@ function CoachDashboard() {
         setTaskMessage("Task assigned successfully.");
         setTaskTitle("");
         setTaskDescription("");
+        setTaskPriority("medium");
+        setTaskDueDate("");
+        setTaskDueTime("");
         setSelectedStudentIds([]);
+        setShowStudentPicker(false);
+        setStudentSearch("");
       }
     } catch (err) {
       console.error("Failed to assign tasks:", err);
-      setTaskMessage("Could not connect to backend to assign tasks.");
+      setTaskMessage("Error trying to assign tasks.");
     } finally {
       setTaskSaving(false);
     }
   }
+
+  function getLocalDateString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  const todayStr = getLocalDateString();
 
   const slotsForSelectedDate = useMemo(() => {
     if (!selectedAvailabilityDate) return [];
@@ -284,6 +454,12 @@ function CoachDashboard() {
   }, [availabilitySlots, selectedAvailabilityDate]);
 
   const slotTakenSet = new Set(slotsForSelectedDate.map((slot) => slot.start_time));
+
+  const bookedHourSet = new Set(
+    appointments
+      .filter((appt) => appt.rawDate === selectedAvailabilityDate)
+      .map((appt) => appt.rawTime)
+  );
 
   return (
     <main
@@ -318,7 +494,6 @@ function CoachDashboard() {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            {/* Upcoming Appointments */}
             <div
               style={{
                 background: "#fff",
@@ -413,7 +588,6 @@ function CoachDashboard() {
               )}
             </div>
 
-            {/* Enter Availability */}
             <div
               style={{
                 background: "#fff",
@@ -430,11 +604,11 @@ function CoachDashboard() {
                 </label>
                 <input
                   type="date"
-                    min={new Date().toISOString().split("T")[0]}
-                    value={selectedAvailabilityDate}
-                    onChange={(e) => {
-                      setSelectedAvailabilityDate(e.target.value);
-                      setAvailabilityMessage("");
+                  min={todayStr}
+                  value={selectedAvailabilityDate}
+                  onChange={(e) => {
+                    setSelectedAvailabilityDate(e.target.value);
+                    setAvailabilityMessage("");
                   }}
                   style={{
                     padding: "0.75rem",
@@ -449,7 +623,7 @@ function CoachDashboard() {
               {selectedAvailabilityDate && (
                 <>
                   <p style={{ color: "#555", marginBottom: "1rem" }}>
-                    Select one-hour time slots for {selectedAvailabilityDate}.
+                    Click a time slot to add availability. Click an added slot to remove it.
                   </p>
 
                   <div
@@ -459,45 +633,128 @@ function CoachDashboard() {
                       gap: "0.75rem",
                     }}
                   >
-                    {slotHours.map((hour) => {
-                      const timeValue = `${String(hour).padStart(2, "0")}:00`;
-                      const taken = slotTakenSet.has(timeValue);
+                    {slotHours
+                      .filter((hour) => {
+                        const timeValue = `${String(hour).padStart(2, "0")}:00`;
+                        return !bookedHourSet.has(timeValue);
+                      })
+                      .map((hour) => {
+                        const timeValue = `${String(hour).padStart(2, "0")}:00`;
+                        const taken = slotTakenSet.has(timeValue);
+                        const disabled = availabilityLoading;
 
-                      return (
-                        <button
-                          key={timeValue}
-                          type="button"
-                          disabled={taken || availabilityLoading}
-                          onClick={() => handleAddAvailability(hour)}
-                          style={{
-                            padding: "0.85rem",
-                            borderRadius: "10px",
-                            border: "1px solid #ddd",
-                            background: taken ? "#e9ecef" : "#f8f9fa",
-                            color: taken ? "#777" : "#1c2740",
-                            cursor: taken ? "not-allowed" : "pointer",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {formatSlotLabel(hour)}
-                          <div style={{ fontSize: "0.75rem", marginTop: "0.25rem" }}>
-                            {taken ? "Added" : "Available"}
-                          </div>
-                        </button>
-                      );
-                    })}
+                        return (
+                          <button
+                            key={timeValue}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => openAvailabilityConfirm(hour)}
+                            style={{
+                              padding: "0.85rem",
+                              borderRadius: "10px",
+                              border: taken ? "1px solid #1c2740" : "1px solid #ddd",
+                              background: taken ? "#e9ecef" : "#f8f9fa",
+                              color: "#1c2740",
+                              cursor: disabled ? "not-allowed" : "pointer",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {formatSlotLabel(hour)}
+                            <div style={{ fontSize: "0.75rem", marginTop: "0.25rem" }}>
+                              {taken ? "Added" : "Available"}
+                            </div>
+                          </button>
+                        );
+                      })}
                   </div>
                 </>
               )}
 
               {availabilityMessage && (
-                <p style={{ marginTop: "1rem", color: "#1c2740", fontWeight: 500 }}>
+                <p style={{
+                  marginTop: "1rem",
+                  color: "#1c2740",
+                  fontWeight: 500,
+                  opacity: availabilityMessage ? 1 : 0,
+                  transition: "opacity 0.5s ease",
+                  minHeight: "1.25rem",
+                }}>
                   {availabilityMessage}
                 </p>
               )}
             </div>
+          </div>
 
-            {/* Assign Action Items */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: 24,
+                padding: "2.2rem 2rem 2rem 2rem",
+                boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  color: "#1c2740",
+                  fontWeight: 600,
+                  fontSize: 22,
+                  marginBottom: 24,
+                  alignSelf: "center",
+                  width: "100%",
+                  textAlign: "center",
+                }}
+              >
+                Students
+              </span>
+
+              {studentsLoading ? (
+                <p style={{ color: "#666", width: "100%", textAlign: "center" }}>
+                  Loading students...
+                </p>
+              ) : studentsError ? (
+                <p style={{ color: "#1c2740", width: "100%", textAlign: "center" }}>
+                  {studentsError}
+                </p>
+              ) : students.length === 0 ? (
+                <p style={{ color: "#777", width: "100%", textAlign: "center" }}>
+                  No students assigned yet.
+                </p>
+              ) : (
+                <div style={{ width: "100%", marginTop: 8 }}>
+                  {students.map((student) => (
+                    <button
+                      key={student.id}
+                      onClick={() => handleStudentClick(student.id)}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        color: "#1c2740",
+                        fontWeight: 500,
+                        fontSize: 17,
+                        borderRadius: 10,
+                        padding: "0.85rem 0.75rem",
+                        marginBottom: 10,
+                        border: "1.5px solid transparent",
+                        background: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span>{student.fullName || student.name || student.email}</span>
+                      <span style={{ fontSize: 22, fontWeight: 400, marginLeft: 12 }}>
+                        &#8250;
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div
               style={{
                 background: "#fff",
@@ -518,36 +775,104 @@ function CoachDashboard() {
                     Select Student(s)
                   </label>
 
-                  <div
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentPicker((prev) => !prev)}
                     style={{
-                      border: "1px solid #ddd",
+                      width: "100%",
+                      padding: "0.9rem 1rem",
                       borderRadius: "12px",
-                      padding: "0.75rem",
+                      border: "1px solid #ddd",
+                      background: "#fff",
+                      color: "#1c2740",
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
                       marginBottom: "1rem",
-                      maxHeight: "200px",
-                      overflowY: "auto",
                     }}
                   >
-                    {students.map((student) => (
+                    <span>{getStudentSelectionLabel()}</span>
+                    <span style={{ fontSize: "1rem" }}>{showStudentPicker ? "▲" : "▼"}</span>
+                  </button>
+
+                  {showStudentPicker && (
+                    <div
+                      style={{
+                        border: "1px solid #ddd",
+                        borderRadius: "12px",
+                        padding: "0.75rem",
+                        marginBottom: "1rem",
+                        background: "#fff",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Search students..."
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "0.8rem",
+                          borderRadius: "10px",
+                          border: "1px solid #ddd",
+                          marginBottom: "0.75rem",
+                        }}
+                      />
+
                       <label
-                        key={student.id}
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: "0.75rem",
                           padding: "0.5rem 0.25rem",
                           color: "#1c2740",
+                          fontWeight: 600,
+                          borderBottom: "1px solid #eee",
+                          marginBottom: "0.5rem",
                         }}
                       >
                         <input
                           type="checkbox"
-                          checked={selectedStudentIds.includes(student.id)}
-                          onChange={() => toggleStudentSelection(student.id)}
+                          checked={allStudentsSelected}
+                          onChange={toggleSelectAllStudents}
                         />
-                        <span>{student.fullName || student.name || student.email}</span>
+                        <span>Select all students</span>
                       </label>
-                    ))}
-                  </div>
+
+                      <div
+                        style={{
+                          maxHeight: "180px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        {filteredStudents.length === 0 ? (
+                          <p style={{ margin: "0.5rem 0", color: "#777" }}>No students found.</p>
+                        ) : (
+                          filteredStudents.map((student) => (
+                            <label
+                              key={student.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.75rem",
+                                padding: "0.5rem 0.25rem",
+                                color: "#1c2740",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedStudentIds.includes(student.id)}
+                                onChange={() => toggleStudentSelection(student.id)}
+                              />
+                              <span>{student.fullName || student.name || student.email}</span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <input
                     type="text"
@@ -577,7 +902,61 @@ function CoachDashboard() {
                       resize: "vertical",
                     }}
                   />
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
+                    Task Priority
+                  </label>
 
+                  <select
+                    value={taskPriority}
+                    onChange={(e) => setTaskPriority(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.85rem",
+                      borderRadius: "10px",
+                      border: "1px solid #ddd",
+                      marginBottom: "1rem",
+                      background: "#fff",
+                      color: "#1c2740",
+                    }}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
+                    Due Date
+                  </label>
+
+                  <input
+                    type="date"
+                    min={todayStr}
+                    value={taskDueDate}
+                    onChange={(e) => setTaskDueDate(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.85rem",
+                      borderRadius: "10px",
+                      border: "1px solid #ddd",
+                      marginBottom: "1rem",
+                    }}
+                  />
+
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
+                    Due Time
+                  </label>
+
+                  <input
+                    type="time"
+                    value={taskDueTime}
+                    onChange={(e) => setTaskDueTime(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.85rem",
+                      borderRadius: "10px",
+                      border: "1px solid #ddd",
+                      marginBottom: "1rem",
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={handleAssignTasks}
@@ -604,78 +983,111 @@ function CoachDashboard() {
               )}
             </div>
           </div>
-
-          {/* Students Card */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 24,
-              padding: "2.2rem 2rem 2rem 2rem",
-              boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-            }}
-          >
-            <span
-              style={{
-                color: "#1c2740",
-                fontWeight: 600,
-                fontSize: 22,
-                marginBottom: 24,
-                alignSelf: "center",
-                width: "100%",
-                textAlign: "center",
-              }}
-            >
-              Students
-            </span>
-
-            {studentsLoading ? (
-              <p style={{ color: "#666", width: "100%", textAlign: "center" }}>
-                Loading students...
-              </p>
-            ) : studentsError ? (
-              <p style={{ color: "#1c2740", width: "100%", textAlign: "center" }}>
-                {studentsError}
-              </p>
-            ) : students.length === 0 ? (
-              <p style={{ color: "#777", width: "100%", textAlign: "center" }}>
-                No students assigned yet.
-              </p>
-            ) : (
-              <div style={{ width: "100%", marginTop: 8 }}>
-                {students.map((student) => (
-                  <button
-                    key={student.id}
-                    onClick={() => handleStudentClick(student.id)}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      color: "#1c2740",
-                      fontWeight: 500,
-                      fontSize: 17,
-                      borderRadius: 10,
-                      padding: "0.85rem 0.75rem",
-                      marginBottom: 10,
-                      border: "1.5px solid transparent",
-                      background: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span>{student.fullName || student.name || student.email}</span>
-                    <span style={{ fontSize: 22, fontWeight: 400, marginLeft: 12 }}>
-                      &#8250;
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
+
+      {showRemoveAvailabilityConfirm && (
+        <div
+          onClick={() => {
+            setShowRemoveAvailabilityConfirm(false);
+            setAvailabilityToRemove(null);
+            setPendingAvailabilityHour(null);
+            setAvailabilityActionType(null);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 2000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 18,
+              padding: "1.5rem",
+              width: "100%",
+              maxWidth: "420px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3 style={{ marginTop: 0, color: "#121c34" }}>
+              {availabilityActionType === "remove"
+                ? "Remove Availability"
+                : "Add Availability"}
+            </h3>
+
+            <p style={{ color: "#555", lineHeight: 1.6 }}>
+              {availabilityActionType === "remove"
+                ? "Are you sure you want to remove this availability?"
+                : "Are you sure you want to add this availability?"}
+            </p>
+
+            <p style={{ color: "#121c34", fontWeight: 600 }}>
+              {selectedAvailabilityDate} at{" "}
+              {availabilityActionType === "remove"
+                ? availabilityToRemove?.start_time
+                : `${String(pendingAvailabilityHour).padStart(2, "0")}:00`}
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.75rem",
+                marginTop: "1.25rem",
+              }}
+            >
+              <button
+                type="button"
+                onClick={
+                  availabilityActionType === "remove"
+                    ? handleRemoveAvailability
+                    : handleConfirmAddAvailability
+                }
+                disabled={availabilityLoading}
+                style={{
+                  padding: "0.75rem 1.1rem",
+                  border: "none",
+                  borderRadius: 10,
+                  background: "#121c34",
+                  color: "#fff",
+                  fontWeight: 600,
+                  cursor: availabilityLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {availabilityLoading ? "Working..." : "Confirm"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRemoveAvailabilityConfirm(false);
+                  setAvailabilityToRemove(null);
+                  setPendingAvailabilityHour(null);
+                  setAvailabilityActionType(null);
+                }}
+                style={{
+                  padding: "0.75rem 1.1rem",
+                  border: "none",
+                  borderRadius: 10,
+                  background: "#ddd",
+                  color: "#121c34",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

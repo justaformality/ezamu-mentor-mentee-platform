@@ -3,6 +3,19 @@ import { useNavigate, useParams } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+function getPriorityColor(priority) {
+  switch ((priority || "").toLowerCase()) {
+    case "high":
+      return "#121c34";
+    case "medium":
+      return "#394c7a";
+    case "low":
+      return "rgb(78, 175, 205)";
+    default:
+      return "#add8e6";
+  }
+}
+
 function StudentInfo() {
   const navigate = useNavigate();
   const { studentId } = useParams();
@@ -12,6 +25,15 @@ function StudentInfo() {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isEditingTask, setIsEditingTask] = useState(false);
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [editTaskPriority, setEditTaskPriority] = useState("medium");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [taskActionLoading, setTaskActionLoading] = useState(false);
+  const [taskActionMessage, setTaskActionMessage] = useState("");
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -40,6 +62,16 @@ function StudentInfo() {
     }
   }, [studentId]);
 
+  useEffect(() => {
+    if (!taskActionMessage) return;
+
+    const timer = setTimeout(() => {
+      setTaskActionMessage("");
+    }, 2500); // 2.5 seconds
+
+    return () => clearTimeout(timer);
+  }, [taskActionMessage]);
+
   async function loadStudentDetails(coachId, selectedStudentId) {
     setLoading(true);
     setError("");
@@ -64,6 +96,116 @@ function StudentInfo() {
       setError("Could not connect to backend for student details.");
       setStudent(null);
       setLoading(false);
+    }
+  }
+
+  function openTaskModal(task) {
+    setSelectedTask(task);
+    setIsEditingTask(false);
+    setEditTaskTitle(task.title || "");
+    setEditTaskDescription(task.description || "");
+    setEditTaskPriority((task.priority || "medium").toLowerCase());
+    setShowDeleteConfirm(false);
+    setTaskActionMessage("");
+  }
+
+  function closeTaskModal() {
+    setSelectedTask(null);
+    setIsEditingTask(false);
+    setEditTaskTitle("");
+    setEditTaskDescription("");
+    setEditTaskPriority("medium");
+    setShowDeleteConfirm(false);
+    setTaskActionMessage("");
+    setTaskActionLoading(false);
+  }
+
+  async function handleSaveTask() {
+    if (!coachUser?.id || !studentId || !selectedTask?.id) return;
+
+    if (!editTaskTitle.trim() || !editTaskDescription.trim()) {
+      setTaskActionMessage("Title and description cannot be empty.");
+      return;
+    }
+
+    setTaskActionLoading(true);
+    setTaskActionMessage("");
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/coaches/${coachUser.id}/students/${studentId}/action_items/${selectedTask.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: editTaskTitle.trim(),
+            description: editTaskDescription.trim(),
+            priority: editTaskPriority,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setTaskActionMessage(data.detail || "Could not update task.");
+        setTaskActionLoading(false);
+        return;
+      }
+
+      setStudent((prev) => ({
+        ...prev,
+        action_items: prev.action_items.map((item) =>
+          item.id === selectedTask.id ? data : item
+        ),
+      }));
+
+      setSelectedTask(data);
+      setEditTaskPriority((data.priority || "medium").toLowerCase());
+      setIsEditingTask(false);
+      setTaskActionMessage("Task updated successfully.");
+    } catch (err) {
+      console.error("Failed to update task:", err);
+      setTaskActionMessage("Could not connect to backend.");
+    } finally {
+      setTaskActionLoading(false);
+    }
+  }
+
+  async function handleDeleteTask() {
+    if (!coachUser?.id || !studentId || !selectedTask?.id) return;
+
+    setTaskActionLoading(true);
+    setTaskActionMessage("");
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/coaches/${coachUser.id}/students/${studentId}/action_items/${selectedTask.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setTaskActionMessage(data.detail || "Could not delete task.");
+        setTaskActionLoading(false);
+        return;
+      }
+
+      setStudent((prev) => ({
+        ...prev,
+        action_items: prev.action_items.filter((item) => item.id !== selectedTask.id),
+      }));
+
+      closeTaskModal();
+    } catch (err) {
+      console.error("Failed to delete task:", err);
+      setTaskActionMessage("Could not connect to backend.");
+      setTaskActionLoading(false);
     }
   }
 
@@ -97,9 +239,9 @@ function StudentInfo() {
               textShadow: "0 2px 10px rgba(0,0,0,0.3)",
             }}
           >
-              {student?.fullName
-                ? `${student.fullName}'s Information`
-                : "Student Information"}
+            {student?.fullName
+              ? `${student.fullName}'s Information`
+              : "Student Information"}
           </h1>
 
           <button
@@ -229,23 +371,51 @@ function StudentInfo() {
 
                 {student.action_items && student.action_items.length > 0 ? (
                   student.action_items.map((task) => (
-                    <div
+                    <button
                       key={task.id}
+                      type="button"
+                      onClick={() => openTaskModal(task)}
                       style={{
+                        width: "100%",
+                        textAlign: "left",
                         borderRadius: 10,
-                        padding: "0.8rem 0.9rem",
+                        padding: "0.9rem 1rem",
                         marginBottom: 10,
                         border: "1px solid #eee",
                         background: "#fafafa",
+                        cursor: "pointer",
                       }}
                     >
+                      <div
+                        style={{
+                          color: "#121c34",
+                          fontWeight: 600,
+                          marginBottom: 4,
+                        }}
+                      >
+                        {task.title || "Untitled Task"}
+                      </div>
                       <div style={{ color: "#555", marginBottom: 4 }}>
                         {task.description}
+                      </div>
+                      <div
+                        style={{
+                          display: "inline-block",
+                          marginBottom: 4,
+                          padding: "0.25rem 0.6rem",
+                          borderRadius: 999,
+                          background: getPriorityColor(task.priority),
+                          color: "#fff",
+                          fontSize: "0.82rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Priority: {(task.priority || "medium").charAt(0).toUpperCase() + (task.priority || "medium").slice(1)}
                       </div>
                       <div style={{ color: "#999", fontSize: "0.9rem" }}>
                         Status: {task.completed ? "Completed" : "Incomplete"}
                       </div>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <p style={{ margin: 0, color: "#777" }}>No tasks assigned.</p>
@@ -257,6 +427,297 @@ function StudentInfo() {
           )}
         </div>
       </div>
+
+      {selectedTask && (
+        <div
+          onClick={closeTaskModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 2000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 18,
+              padding: "1.5rem",
+              width: "100%",
+              maxWidth: "520px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            }}
+          >
+            {!isEditingTask ? (
+              <>
+                <h2 style={{ marginTop: 0, color: "#121c34" }}>
+                  {selectedTask.title || "Untitled Task"}
+                </h2>
+
+                <p style={{ color: "#555", lineHeight: 1.6 }}>
+                  {selectedTask.description}
+                </p>
+
+                <p style={{ color: "#888", fontSize: "0.95rem" }}>
+                  Status: {selectedTask.completed ? "Completed" : "Incomplete"}
+                </p>
+
+                {taskActionMessage && (
+                  <p
+                    style={{
+                      color: "#121c34",
+                      fontWeight: 600,
+                      opacity: taskActionMessage ? 1 : 0,
+                      transition: "opacity 0.5s ease",
+                    }}
+                  >
+                    {taskActionMessage}
+                  </p>
+                )}
+
+                {!showDeleteConfirm ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: "0.75rem",
+                      marginTop: "1.25rem",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingTask(true)}
+                      style={{
+                        padding: "0.75rem 1.1rem",
+                        border: "none",
+                        borderRadius: 10,
+                        background: "#121c34",
+                        color: "#fff",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      style={{
+                        padding: "0.75rem 1.1rem",
+                        border: "none",
+                        borderRadius: 10,
+                        background: "#a52a2a",
+                        color: "#fff",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Delete
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={closeTaskModal}
+                      style={{
+                        padding: "0.75rem 1.1rem",
+                        border: "none",
+                        borderRadius: 10,
+                        background: "#ddd",
+                        color: "#121c34",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: "1.25rem" }}>
+                    <p style={{ color: "#121c34", fontWeight: 600 }}>
+                      Are you sure you want to delete this task?
+                    </p>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: "0.75rem",
+                        marginTop: "1rem",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={handleDeleteTask}
+                        disabled={taskActionLoading}
+                        style={{
+                          padding: "0.75rem 1.1rem",
+                          border: "none",
+                          borderRadius: 10,
+                          background: "#a52a2a",
+                          color: "#fff",
+                          fontWeight: 600,
+                          cursor: taskActionLoading ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {taskActionLoading ? "Deleting..." : "Confirm"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        style={{
+                          padding: "0.75rem 1.1rem",
+                          border: "none",
+                          borderRadius: 10,
+                          background: "#ddd",
+                          color: "#121c34",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 style={{ marginTop: 0, color: "#121c34" }}>Edit Task</h2>
+
+                <input
+                  type="text"
+                  value={editTaskTitle}
+                  onChange={(e) => setEditTaskTitle(e.target.value)}
+                  placeholder="Task title"
+                  style={{
+                    width: "100%",
+                    padding: "0.85rem",
+                    borderRadius: "10px",
+                    border: "1px solid #ddd",
+                    marginBottom: "1rem",
+                  }}
+                />
+
+                <textarea
+                  value={editTaskDescription}
+                  onChange={(e) => setEditTaskDescription(e.target.value)}
+                  placeholder="Task description"
+                  rows={5}
+                  style={{
+                    width: "100%",
+                    padding: "0.85rem",
+                    borderRadius: "10px",
+                    border: "1px solid #ddd",
+                    resize: "vertical",
+                  }}
+                />
+                <div
+                  style={{
+                    display: "inline-block",
+                    marginBottom: 10,
+                    padding: "0.3rem 0.7rem",
+                    borderRadius: 999,
+                    background: getPriorityColor(selectedTask.priority),
+                    color: "#fff",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  Priority: {(selectedTask.priority || "medium").charAt(0).toUpperCase() + (selectedTask.priority || "medium").slice(1)}
+                </div>
+                <label
+                  style={{
+                    display: "block",
+                    marginTop: "1rem",
+                    marginBottom: "0.5rem",
+                    fontWeight: 600,
+                    color: "#121c34",
+                  }}
+                >
+                  Task Priority
+                </label>
+
+                <select
+                  value={editTaskPriority}
+                  onChange={(e) => setEditTaskPriority(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.85rem",
+                    borderRadius: "10px",
+                    border: "1px solid #ddd",
+                    background: "#fff",
+                    color: "#1c2740",
+                  }}
+                >
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                {taskActionMessage && (
+                  <p style={{ color: "#121c34", fontWeight: 600, marginTop: "1rem" }}>
+                    {taskActionMessage}
+                  </p>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.75rem",
+                    marginTop: "1.25rem",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={handleSaveTask}
+                    disabled={taskActionLoading}
+                    style={{
+                      padding: "0.75rem 1.1rem",
+                      border: "none",
+                      borderRadius: 10,
+                      background: "#121c34",
+                      color: "#fff",
+                      fontWeight: 600,
+                      cursor: taskActionLoading ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {taskActionLoading ? "Saving..." : "Save"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingTask(false);
+                      setEditTaskTitle(selectedTask.title || "");
+                      setEditTaskDescription(selectedTask.description || "");
+                      setEditTaskPriority((selectedTask.priority || "medium").toLowerCase());
+                      setTaskActionMessage("");
+                    }}
+                    style={{
+                      padding: "0.75rem 1.1rem",
+                      border: "none",
+                      borderRadius: 10,
+                      background: "#ddd",
+                      color: "#121c34",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
