@@ -16,6 +16,43 @@ function getPriorityColor(priority) {
   }
 }
 
+function formatDueDateTime(dueDate, dueTime) {
+  if (!dueDate) return "Assigned by coach";
+
+  try {
+    if (dueTime) {
+      const dt = new Date(`${dueDate}T${dueTime}`);
+      return dt.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    }
+
+    const d = new Date(`${dueDate}T00:00:00`);
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "Assigned by coach";
+  }
+}
+
+function isTaskOverdue(dueDate, dueTime) {
+  if (!dueDate) return false;
+
+  try {
+    const due = new Date(`${dueDate}T${dueTime || "23:59:59"}`);
+    return due < new Date();
+  } catch {
+    return false;
+  }
+}
+
 function StudentInfo() {
   const navigate = useNavigate();
   const { studentId } = useParams();
@@ -34,6 +71,7 @@ function StudentInfo() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [taskActionLoading, setTaskActionLoading] = useState(false);
   const [taskActionMessage, setTaskActionMessage] = useState("");
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -67,7 +105,7 @@ function StudentInfo() {
 
     const timer = setTimeout(() => {
       setTaskActionMessage("");
-    }, 2500); // 2.5 seconds
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [taskActionMessage]);
@@ -90,6 +128,7 @@ function StudentInfo() {
       }
 
       setStudent(data);
+      setShowAllTasks(false);
       setLoading(false);
     } catch (err) {
       console.error("Failed to load student details:", err);
@@ -208,7 +247,34 @@ function StudentInfo() {
       setTaskActionLoading(false);
     }
   }
+  const sortedStudentTasks = student?.action_items
+    ? [...student.action_items].sort((a, b) => {
+      const aOverdue = isTaskOverdue(a.due_date, a.due_time);
+      const bOverdue = isTaskOverdue(b.due_date, b.due_time);
 
+      // 1. Overdue first
+      if (aOverdue !== bOverdue) {
+        return aOverdue ? -1 : 1;
+      }
+
+      // 2. Tasks with due dates first
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+
+      // 3. Sort by closest due date
+      const dateA = new Date(`${a.due_date}T${a.due_time || "00:00:00"}`);
+      const dateB = new Date(`${b.due_date}T${b.due_time || "00:00:00"}`);
+
+      return dateA - dateB;
+    })
+    : [];
+
+  const visibleStudentTasks = showAllTasks
+    ? sortedStudentTasks
+    : sortedStudentTasks.slice(0, 5);
+
+  const hasMoreStudentTasks = sortedStudentTasks.length > 5;
   return (
     <main
       style={{
@@ -369,54 +435,119 @@ function StudentInfo() {
                   Tasks
                 </div>
 
-                {student.action_items && student.action_items.length > 0 ? (
-                  student.action_items.map((task) => (
-                    <button
-                      key={task.id}
-                      type="button"
-                      onClick={() => openTaskModal(task)}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        borderRadius: 10,
-                        padding: "0.9rem 1rem",
-                        marginBottom: 10,
-                        border: "1px solid #eee",
-                        background: "#fafafa",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div
+                {sortedStudentTasks.length > 0 ? (
+                  <>
+                    {visibleStudentTasks.map((task) => {
+                      const isOverdue = isTaskOverdue(task.due_date, task.due_time);
+
+                      return (
+                        <button
+                          key={task.id}
+                          type="button"
+                          onClick={() => openTaskModal(task)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            borderRadius: 10,
+                            padding: "0.9rem 1rem",
+                            marginBottom: 10,
+                            border: isOverdue ? "1px solid #f1b0b0" : "1px solid #eee",
+                            background: isOverdue ? "#fff5f5" : "#fafafa",
+                            borderLeft: isOverdue ? "4px solid #c0392b" : "4px solid transparent",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                              gap: "1rem",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <div>
+                              <div
+                                style={{
+                                  color: "#121c34",
+                                  fontWeight: 600,
+                                  marginBottom: 4,
+                                }}
+                              >
+                                {task.title || "Untitled Task"}
+                              </div>
+
+                              <div
+                                style={{
+                                  color: isOverdue ? "#c0392b" : "#777",
+                                  fontSize: "0.9rem",
+                                  fontWeight: isOverdue ? 600 : 400,
+                                }}
+                              >
+                                📅 {isOverdue ? "Overdue:" : "Due:"}{" "}
+                                {formatDueDateTime(task.due_date, task.due_time)}
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                display: "inline-block",
+                                padding: "0.25rem 0.6rem",
+                                borderRadius: 999,
+                                background: getPriorityColor(task.priority),
+                                color: "#fff",
+                                fontSize: "0.82rem",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Priority: {(task.priority || "medium").charAt(0).toUpperCase() + (task.priority || "medium").slice(1)}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {hasMoreStudentTasks && !showAllTasks && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTasks(true)}
                         style={{
+                          marginTop: "0.5rem",
+                          padding: "0.8rem 1rem",
+                          border: "none",
+                          borderRadius: "10px",
+                          background: "#394c7a",
+                          color: "#fff",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          width: "100%",
+                        }}
+                      >
+                        Show More Tasks
+                      </button>
+                    )}
+
+                    {hasMoreStudentTasks && showAllTasks && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTasks(false)}
+                        style={{
+                          marginTop: "0.5rem",
+                          padding: "0.8rem 1rem",
+                          border: "none",
+                          borderRadius: "10px",
+                          background: "#ddd",
                           color: "#121c34",
                           fontWeight: 600,
-                          marginBottom: 4,
+                          cursor: "pointer",
+                          width: "100%",
                         }}
                       >
-                        {task.title || "Untitled Task"}
-                      </div>
-                      <div style={{ color: "#555", marginBottom: 4 }}>
-                        {task.description}
-                      </div>
-                      <div
-                        style={{
-                          display: "inline-block",
-                          marginBottom: 4,
-                          padding: "0.25rem 0.6rem",
-                          borderRadius: 999,
-                          background: getPriorityColor(task.priority),
-                          color: "#fff",
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Priority: {(task.priority || "medium").charAt(0).toUpperCase() + (task.priority || "medium").slice(1)}
-                      </div>
-                      <div style={{ color: "#999", fontSize: "0.9rem" }}>
-                        Status: {task.completed ? "Completed" : "Incomplete"}
-                      </div>
-                    </button>
-                  ))
+                        Show Less Tasks
+                      </button>
+                    )}
+                  </>
                 ) : (
                   <p style={{ margin: 0, color: "#777" }}>No tasks assigned.</p>
                 )}
@@ -459,12 +590,22 @@ function StudentInfo() {
                   {selectedTask.title || "Untitled Task"}
                 </h2>
 
+                <p style={{ color: "#555", marginBottom: "0.5rem" }}>
+                  <strong>Priority:</strong>{" "}
+                  {(selectedTask.priority || "medium").charAt(0).toUpperCase() +
+                    (selectedTask.priority || "medium").slice(1)}
+                </p>
+
+                <p style={{ color: "#555", marginBottom: "0.5rem" }}>
+                  <strong>Due Date:</strong> {formatDueDateTime(selectedTask.due_date, selectedTask.due_time)}
+                </p>
+
                 <p style={{ color: "#555", lineHeight: 1.6 }}>
-                  {selectedTask.description}
+                  <strong>Description:</strong> {selectedTask.description}
                 </p>
 
                 <p style={{ color: "#888", fontSize: "0.95rem" }}>
-                  Status: {selectedTask.completed ? "Completed" : "Incomplete"}
+                  <strong>Status:</strong> {selectedTask.completed ? "Completed" : "Incomplete"}
                 </p>
 
                 {taskActionMessage && (
@@ -618,9 +759,11 @@ function StudentInfo() {
                     resize: "vertical",
                   }}
                 />
+
                 <div
                   style={{
                     display: "inline-block",
+                    marginTop: 10,
                     marginBottom: 10,
                     padding: "0.3rem 0.7rem",
                     borderRadius: 999,
@@ -630,8 +773,13 @@ function StudentInfo() {
                     fontWeight: 600,
                   }}
                 >
-                  Priority: {(selectedTask.priority || "medium").charAt(0).toUpperCase() + (selectedTask.priority || "medium").slice(1)}
+                  Current Priority: {(selectedTask.priority || "medium").charAt(0).toUpperCase() + (selectedTask.priority || "medium").slice(1)}
                 </div>
+
+                <div style={{ color: "#777", marginBottom: 10, fontSize: "0.92rem" }}>
+                  Current Due Date: {formatDueDateTime(selectedTask.due_date, selectedTask.due_time)}
+                </div>
+
                 <label
                   style={{
                     display: "block",
@@ -660,6 +808,7 @@ function StudentInfo() {
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
+
                 {taskActionMessage && (
                   <p style={{ color: "#121c34", fontWeight: 600, marginTop: "1rem" }}>
                     {taskActionMessage}

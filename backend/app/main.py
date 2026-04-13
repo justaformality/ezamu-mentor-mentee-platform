@@ -92,13 +92,18 @@ class Appointment(Base):
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     coach_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
+    description = Column(String, nullable=True)   # student's meeting description
+    coach_note = Column(String, nullable=True)    # coach-only note
     scheduledAt = Column(DateTime, nullable=False)
+    status = Column(String, nullable=False, default="scheduled")
+    meeting_link = Column(String, nullable=True, default=None)
 
     student = relationship(
         "User", foreign_keys=[student_id], backref="student_appointments"
     )
-    coach = relationship("User", foreign_keys=[
-                         coach_id], backref="coach_appointments")
+    coach = relationship(
+        "User", foreign_keys=[coach_id], backref="coach_appointments"
+    )
 
 
 class ActionItem(Base):
@@ -179,6 +184,46 @@ class ParentInviteOut(BaseModel):
     status: str
     created_at: str
 
+class SmartGoal(Base):
+    __tablename__ = "smart_goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    category = Column(String, nullable=True)
+    deadline = Column(Date, nullable=True)
+    why = Column(String, nullable=True)
+    specific = Column(String, nullable=True)
+    milestones_json = Column(String, nullable=False, default="[]")
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+
+    student = relationship("User", backref="smart_goals")
+
+class SmartGoalMilestoneIn(BaseModel):
+    id: int
+    text: str
+    completed: bool = False
+
+
+class SmartGoalIn(BaseModel):
+    title: str
+    category: Optional[str] = None
+    deadline: Optional[str] = None   # YYYY-MM-DD
+    why: Optional[str] = None
+    specific: Optional[str] = None
+    milestones: List[SmartGoalMilestoneIn] = Field(default_factory=list)
+
+
+class SmartGoalOut(BaseModel):
+    id: int
+    student_id: int
+    title: str
+    category: Optional[str] = None
+    deadline: Optional[str] = None
+    why: Optional[str] = None
+    specific: Optional[str] = None
+    milestones: List[Dict[str, Any]] = Field(default_factory=list)
+    created_at: str
 
 class PeerAssignRequest(BaseModel):
     actor_id: int
@@ -230,6 +275,28 @@ class PeerStudentDetailOut(BaseModel):
     bio: Optional[str] = None
     goals: List[str] = Field(default_factory=list)
     action_items: List[Dict[str, Any]]
+
+
+class AppointmentDetailOut(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    coach_note: Optional[str] = None
+    scheduledAt: str
+    status: str
+    meeting_link: Optional[str] = None
+    coach_id: int
+    coach_name: str
+    student_id: int
+    student_name: str
+    parent_id: Optional[int] = None
+    parent_name: Optional[str] = None
+    can_cancel: bool = False
+    can_edit: bool = False
+
+
+class CancelAppointmentIn(BaseModel):
+    actor_id: int
 
 
 Base.metadata.create_all(bind=engine)
@@ -335,6 +402,7 @@ class BookAppointmentIn(BaseModel):
     coach_id: int
     date: str
     time: str
+    description: Optional[str] = None
 
 
 class AssessmentResponseIn(BaseModel):
@@ -379,6 +447,11 @@ class ActionItemOut(BaseModel):
     assigned_by_name: Optional[str] = None
     due_date: Optional[str] = None
     due_time: Optional[str] = None
+
+class AppointmentUpdateIn(BaseModel):
+    actor_id: int
+    title: Optional[str] = None
+    coach_note: Optional[str] = None
 
 
 app = FastAPI(title="EZAMU POC Backend (DB)")
@@ -522,12 +595,31 @@ def get_appointments(user_id: int, db: Session = Depends(get_db)):
 
     if user.role == "student":
         appointments = (
-            db.query(Appointment).filter(
-                Appointment.student_id == user_id).all()
+            db.query(Appointment)
+            .filter(
+                Appointment.student_id == user_id,
+                Appointment.status != "canceled",
+            )
+            .all()
         )
     elif user.role == "coach":
         appointments = (
-            db.query(Appointment).filter(Appointment.coach_id == user_id).all()
+            db.query(Appointment)
+            .filter(
+                Appointment.coach_id == user_id,
+                Appointment.status != "canceled",
+            )
+            .all()
+        )
+    elif user.role == "parent":
+        child_ids = [child.id for child in user.children]
+        appointments = (
+            db.query(Appointment)
+            .filter(
+                Appointment.student_id.in_(child_ids) if child_ids else False,
+                Appointment.status != "canceled",
+            )
+            .all()
         )
     else:
         appointments = []
@@ -539,9 +631,146 @@ def get_appointments(user_id: int, db: Session = Depends(get_db)):
             "coach_id": a.coach_id,
             "title": a.title,
             "scheduledAt": a.scheduledAt.isoformat(),
+            "status": a.status,
+            "meeting_link": a.meeting_link,
         }
         for a in appointments
     ]
+
+
+@app.get("/appointments/{appointment_id}", response_model=AppointmentDetailOut)
+def get_appointment_detail(
+    appointment_id: int,
+    viewer_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    viewer = db.query(User).filter(User.id == viewer_id).first()
+    if not viewer:
+        raise HTTPException(status_code=404, detail="Viewer not found")
+
+    student = db.query(User).filter(User.id == appointment.student_id).first()
+    coach = db.query(User).filter(User.id == appointment.coach_id).first()
+    parent = (
+        db.query(User).filter(User.id == student.parentID).first()
+        if student and student.parentID
+        else None
+    )
+
+    allowed = False
+    can_cancel = False
+    can_edit = False
+
+    if viewer.role == "student" and viewer.id == appointment.student_id:
+        allowed = True
+    elif viewer.role == "coach" and viewer.id == appointment.coach_id:
+        allowed = True
+        can_cancel = True
+        can_edit = True
+    elif viewer.role == "parent" and parent and viewer.id == parent.id:
+        allowed = True
+        can_cancel = True
+
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Not authorized to view this appointment")
+
+    return AppointmentDetailOut(
+        id=appointment.id,
+        title=appointment.title,
+        description=appointment.description,
+        coach_note=appointment.coach_note,
+        scheduledAt=appointment.scheduledAt.isoformat(),
+        status=appointment.status,
+        meeting_link=appointment.meeting_link,
+        coach_id=coach.id,
+        coach_name=coach.fullName or coach.email or "Coach",
+        student_id=student.id,
+        student_name=student.fullName or student.email or "Student",
+        parent_id=parent.id if parent else None,
+        parent_name=(parent.fullName or parent.email) if parent else None,
+        can_cancel=can_cancel,
+        can_edit=can_edit,
+    )
+
+
+@app.post("/appointments/{appointment_id}/cancel")
+def cancel_appointment(
+    appointment_id: int,
+    data: CancelAppointmentIn,
+    db: Session = Depends(get_db),
+):
+    appointment = db.query(Appointment).filter(
+        Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    actor = db.query(User).filter(User.id == data.actor_id).first()
+    if not actor:
+        raise HTTPException(status_code=404, detail="Actor not found")
+
+    student = db.query(User).filter(User.id == appointment.student_id).first()
+    parent = db.query(User).filter(User.id == student.parentID).first(
+    ) if student and student.parentID else None
+
+    is_coach = actor.role == "coach" and actor.id == appointment.coach_id
+    is_parent = actor.role == "parent" and parent and actor.id == parent.id
+
+    if not (is_coach or is_parent):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the coach or the parent can cancel this appointment",
+        )
+
+    appointment.status = "canceled"
+    db.commit()
+    db.refresh(appointment)
+
+    return {"message": "Appointment canceled successfully"}
+
+
+@app.patch("/appointments/{appointment_id}")
+def update_appointment(
+    appointment_id: int,
+    data: AppointmentUpdateIn,
+    db: Session = Depends(get_db),
+):
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    actor = db.query(User).filter(User.id == data.actor_id).first()
+    if not actor:
+        raise HTTPException(status_code=404, detail="Actor not found")
+
+    if actor.role != "coach" or actor.id != appointment.coach_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the assigned coach can edit this appointment",
+        )
+
+    if data.title is not None:
+        cleaned_title = data.title.strip()
+        appointment.title = cleaned_title if cleaned_title else "Coaching Session"
+
+    if data.coach_note is not None:
+        cleaned_note = data.coach_note.strip()
+        appointment.coach_note = cleaned_note if cleaned_note else None
+
+    db.commit()
+    db.refresh(appointment)
+
+    return {
+        "id": appointment.id,
+        "title": appointment.title,
+        "description": appointment.description,
+        "coach_note": appointment.coach_note,
+        "scheduledAt": appointment.scheduledAt.isoformat(),
+        "status": appointment.status,
+        "meeting_link": appointment.meeting_link,
+    }
 
 
 @app.get("/users/{user_id}/action_items")
@@ -565,6 +794,137 @@ def get_action_items(user_id: int, db: Session = Depends(get_db)):
         for ai in user.action_items
     ]
 
+@app.get("/students/{student_id}/smart_goals", response_model=List[SmartGoalOut])
+def list_smart_goals(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    goals = (
+        db.query(SmartGoal)
+        .filter(SmartGoal.student_id == student_id)
+        .order_by(SmartGoal.created_at.desc())
+        .all()
+    )
+
+    return [
+        SmartGoalOut(
+            id=goal.id,
+            student_id=goal.student_id,
+            title=goal.title,
+            category=goal.category,
+            deadline=goal.deadline.isoformat() if goal.deadline else None,
+            why=goal.why,
+            specific=goal.specific,
+            milestones=json.loads(goal.milestones_json) if goal.milestones_json else [],
+            created_at=goal.created_at.isoformat(),
+        )
+        for goal in goals
+    ]
+
+
+@app.post("/students/{student_id}/smart_goals", response_model=SmartGoalOut, status_code=201)
+def create_smart_goal(student_id: int, data: SmartGoalIn, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    parsed_deadline = None
+    if data.deadline:
+        try:
+            parsed_deadline = datetime.strptime(data.deadline, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid deadline format. Use YYYY-MM-DD.")
+
+    goal = SmartGoal(
+        student_id=student_id,
+        title=data.title.strip(),
+        category=(data.category or "").strip() or None,
+        deadline=parsed_deadline,
+        why=(data.why or "").strip() or None,
+        specific=(data.specific or "").strip() or None,
+        milestones_json=json.dumps([m.model_dump() for m in data.milestones]),
+    )
+
+    db.add(goal)
+    db.commit()
+    db.refresh(goal)
+
+    return SmartGoalOut(
+        id=goal.id,
+        student_id=goal.student_id,
+        title=goal.title,
+        category=goal.category,
+        deadline=goal.deadline.isoformat() if goal.deadline else None,
+        why=goal.why,
+        specific=goal.specific,
+        milestones=json.loads(goal.milestones_json) if goal.milestones_json else [],
+        created_at=goal.created_at.isoformat(),
+    )
+
+
+@app.patch("/students/{student_id}/smart_goals/{goal_id}", response_model=SmartGoalOut)
+def update_smart_goal(student_id: int, goal_id: int, data: SmartGoalIn, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    goal = (
+        db.query(SmartGoal)
+        .filter(SmartGoal.id == goal_id, SmartGoal.student_id == student_id)
+        .first()
+    )
+    if not goal:
+        raise HTTPException(status_code=404, detail="SMART goal not found")
+
+    parsed_deadline = None
+    if data.deadline:
+        try:
+            parsed_deadline = datetime.strptime(data.deadline, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid deadline format. Use YYYY-MM-DD.")
+
+    goal.title = data.title.strip()
+    goal.category = (data.category or "").strip() or None
+    goal.deadline = parsed_deadline
+    goal.why = (data.why or "").strip() or None
+    goal.specific = (data.specific or "").strip() or None
+    goal.milestones_json = json.dumps([m.model_dump() for m in data.milestones])
+
+    db.commit()
+    db.refresh(goal)
+
+    return SmartGoalOut(
+        id=goal.id,
+        student_id=goal.student_id,
+        title=goal.title,
+        category=goal.category,
+        deadline=goal.deadline.isoformat() if goal.deadline else None,
+        why=goal.why,
+        specific=goal.specific,
+        milestones=json.loads(goal.milestones_json) if goal.milestones_json else [],
+        created_at=goal.created_at.isoformat(),
+    )
+
+
+@app.delete("/students/{student_id}/smart_goals/{goal_id}")
+def delete_smart_goal(student_id: int, goal_id: int, db: Session = Depends(get_db)):
+    student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    goal = (
+        db.query(SmartGoal)
+        .filter(SmartGoal.id == goal_id, SmartGoal.student_id == student_id)
+        .first()
+    )
+    if not goal:
+        raise HTTPException(status_code=404, detail="SMART goal not found")
+
+    db.delete(goal)
+    db.commit()
+
+    return {"message": "SMART goal deleted successfully"}
 
 @app.post("/users/{user_id}/change_password")
 def change_password(
@@ -1752,38 +2112,72 @@ def filter_coaches(date: str, time: str, db: Session = Depends(get_db)):
 
 
 @app.get("/peers/filter")
-def filter_peers(goal: str, student_id: int, db: Session = Depends(get_db)):
-    check_student = (
-        db.query(User).filter(User.id == student_id,
-                              User.role == "student").first()
+def filter_peers(
+    student_id: int,
+    search: Optional[str] = Query(None),
+    goal: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    current_student = (
+        db.query(User)
+        .filter(User.id == student_id, User.role == "student")
+        .first()
     )
-    if not check_student:
-        raise HTTPException(
-            status_code=403, detail="Only students can filter peers")
+    if not current_student:
+        raise HTTPException(status_code=404, detail="Student not found")
 
     students = (
-        db.query(User).filter(User.role == "student",
-                              User.id != student_id).all()
+        db.query(User)
+        .filter(
+            User.role == "student",
+            User.id != student_id,
+            User.peerID.is_(None),
+        )
+        .all()
     )
 
-    matching = []
-    for s in students:
-        try:
-            goals = json.loads(s.student_goals_json)
-            if goal in goals:
-                matching.append(s)
-        except (TypeError, ValueError):
-            continue
+    search_value = (search or "").strip().lower()
+    goal_value = (goal or "").strip().lower()
 
-    return [
-        {
-            "id": s.id,
-            "email": s.email,
-            "fullName": s.fullName,
-            "goals": json.loads(s.student_goals_json),
-        }
-        for s in matching
-    ]
+    results = []
+
+    for student in students:
+        try:
+            goals = json.loads(student.student_goals_json) if student.student_goals_json else []
+            if not isinstance(goals, list):
+                goals = []
+        except (TypeError, ValueError):
+            goals = []
+
+        normalized_goals = [str(item).strip() for item in goals if str(item).strip()]
+
+        matches_search = True
+        if search_value:
+            haystack = " ".join(
+                [
+                    student.fullName or "",
+                    student.email or "",
+                ]
+            ).lower()
+            matches_search = search_value in haystack
+
+        matches_goal = True
+        if goal_value:
+            matches_goal = any(g.lower() == goal_value for g in normalized_goals)
+
+        if matches_search and matches_goal:
+            results.append(
+                {
+                    "id": student.id,
+                    "email": student.email,
+                    "fullName": student.fullName,
+                    "age": student.student_age,
+                    "bio": student.student_bio,
+                    "goals": normalized_goals,
+                }
+            )
+
+    return results
 
 
 @app.post(
@@ -2045,10 +2439,18 @@ def book_appointment(booking: BookAppointmentIn, db: Session = Depends(get_db)):
         student_id=booking.student_id,
         coach_id=booking.coach_id,
         title="Coaching Session",
+        description=booking.description.strip() if booking.description and booking.description.strip() else None,
+        coach_note=None,
         scheduledAt=appointment_datetime,
+        status="scheduled",
+        meeting_link=None,
     )
 
     db.add(new_appointment)
+    db.flush()  # gets appointment ID before commit
+
+    new_appointment.meeting_link = f"https://meet.jit.si/ezamu-appointment-{new_appointment.id}"
+
     db.delete(slot)
     student.coachID = booking.coach_id
     db.commit()

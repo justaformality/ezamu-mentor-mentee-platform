@@ -30,6 +30,8 @@ function AppointmentPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [meetingDescription, setMeetingDescription] = useState("");
+  
 
   useEffect(() => {
     async function fetchCoaches() {
@@ -39,18 +41,18 @@ function AppointmentPage() {
 
         const normalized = Array.isArray(data)
           ? data.map((coach) => ({
-              id: coach.id,
-              name: coach.name || coach.fullName || coach.email || "Coach",
-              profile_pic_url: coach.profile_pic_url || "",
-              bio: coach.bio || coach.description || "Coach at EZAMU platform",
-              expertise: Array.isArray(coach.expertise)
-                ? coach.expertise
-                : Array.isArray(coach.expertise_json)
+            id: coach.id,
+            name: coach.name || coach.fullName || coach.email || "Coach",
+            profile_pic_url: coach.profile_pic_url || "",
+            bio: coach.bio || coach.description || "Coach at EZAMU platform",
+            expertise: Array.isArray(coach.expertise)
+              ? coach.expertise
+              : Array.isArray(coach.expertise_json)
                 ? coach.expertise_json
                 : Array.isArray(coach.fields)
-                ? coach.fields
-                : [],
-            }))
+                  ? coach.fields
+                  : [],
+          }))
           : [];
 
         setCoaches(normalized);
@@ -90,7 +92,7 @@ function AppointmentPage() {
     currentPage * COACHES_PER_PAGE
   );
 
-    async function loadCoachAvailability(coachId) {
+  async function loadCoachAvailability(coachId) {
     setAvailabilityLoading(true);
     setBookingMessage("");
     setSelectedDate("");
@@ -122,6 +124,7 @@ function AppointmentPage() {
     setShowConfirmModal(false);
     setBookingMessage("");
     setCoachAvailability([]);
+    setMeetingDescription("");
   }
 
   function startBooking() {
@@ -138,6 +141,7 @@ function AppointmentPage() {
     setShowConfirmModal(false);
     setBookingMessage("");
     setCoachAvailability([]);
+    setMeetingDescription("");
   }
 
   function formatTimeLabel(time24) {
@@ -176,6 +180,7 @@ function AppointmentPage() {
           coach_id: selectedCoach.id,
           date: selectedDate,
           time: selectedTime,
+          description: meetingDescription,
         }),
       });
 
@@ -587,7 +592,7 @@ function AppointmentPage() {
                     padding: "0.75rem 1.5rem",
                     border: "none",
                     borderRadius: "8px",
-                    background: "#1c2740",
+                    background: "#a52a2a",
                     color: "#fff",
                     cursor: "pointer",
                     fontWeight: 600,
@@ -626,7 +631,31 @@ function AppointmentPage() {
                     marginBottom: "1rem",
                   }}
                 />
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: 600,
+                    color: "#1c2740",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Meeting Description
+                </label>
 
+                <textarea
+                  value={meetingDescription}
+                  onChange={(e) => setMeetingDescription(e.target.value)}
+                  placeholder="What is this appointment about?"
+                  rows={4}
+                  style={{
+                    width: "100%",
+                    padding: "0.85rem",
+                    borderRadius: "10px",
+                    border: "1px solid #ddd",
+                    marginBottom: "1rem",
+                    resize: "vertical",
+                  }}
+                />
                 {availabilityLoading ? (
                   <p style={{ color: "#666", textAlign: "center" }}>Loading availability...</p>
                 ) : selectedDate ? (
@@ -709,6 +738,7 @@ function AppointmentPage() {
                       setSelectedTime("");
                       setShowConfirmModal(false);
                       setBookingMessage("");
+                      setMeetingDescription("");
                     }}
                     style={{
                       padding: "0.75rem 1.5rem",
@@ -730,7 +760,7 @@ function AppointmentPage() {
                       padding: "0.75rem 1.5rem",
                       border: "none",
                       borderRadius: "8px",
-                      background: "#1c2740",
+                      background: "#a52a2a",
                       color: "#fff",
                       cursor: "pointer",
                       fontWeight: 600,
@@ -806,7 +836,7 @@ function AppointmentPage() {
                         padding: "0.75rem 1.3rem",
                         border: "none",
                         borderRadius: "8px",
-                        background: "#1c2740",
+                        background: "#a52a2a",
                         color: "#fff",
                         cursor: "pointer",
                         fontWeight: 600,

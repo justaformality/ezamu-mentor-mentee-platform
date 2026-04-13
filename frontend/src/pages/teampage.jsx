@@ -3,6 +3,18 @@ import { Link, useLocation } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+const interestOptions = [
+  "Engineering",
+  "Medicine",
+  "Business",
+  "Arts",
+  "Science",
+  "Technology",
+  "Education",
+  "Law",
+  "Other",
+];
+
 function TeamPage() {
   const location = useLocation();
   const [studentName, setStudentName] = useState("");
@@ -10,11 +22,13 @@ function TeamPage() {
   const [isParentView, setIsParentView] = useState(false);
   const [parentInfo, setParentInfo] = useState(null);
   const [peerInfo, setPeerInfo] = useState(null);
-  const [recommendedPeer, setRecommendedPeer] = useState(null);
-  const [declinedPeerIds, setDeclinedPeerIds] = useState([]);
+  const [peerSearch, setPeerSearch] = useState("");
+  const [selectedInterest, setSelectedInterest] = useState("");
+  const [peerResults, setPeerResults] = useState([]);
+  const [selectedPeer, setSelectedPeer] = useState(null);
   const [showPeerModal, setShowPeerModal] = useState(false);
-  const [peerMessage, setPeerMessage] = useState("");
   const [isSearchingPeers, setIsSearchingPeers] = useState(false);
+  const [peerMessage, setPeerMessage] = useState("");
   const [isAssigningPeer, setIsAssigningPeer] = useState(false);
 
   useEffect(() => {
@@ -84,34 +98,38 @@ function TeamPage() {
     fetchPeerInfo();
   }, [studentId]);
 
-  const fetchRecommendation = async (excludedIds = []) => {
-    const query = excludedIds.length > 0
-      ? `?exclude_ids=${encodeURIComponent(excludedIds.join(","))}`
-      : "";
-
-    const response = await fetch(`${API_BASE}/students/${studentId}/peer/recommendation${query}`);
-    if (!response.ok) {
-      throw new Error("Could not search for peers right now.");
-    }
-
-    const data = await response.json();
-    return data.peer || null;
-  };
-
   const handleSearchPeers = async () => {
     if (!studentId) return;
+
     setIsSearchingPeers(true);
     setPeerMessage("");
-    setRecommendedPeer(null);
-    setDeclinedPeerIds([]);
+    setPeerResults([]);
 
     try {
-      const peer = await fetchRecommendation([]);
-      setRecommendedPeer(peer);
-      setShowPeerModal(true);
+      const params = new URLSearchParams({
+        student_id: String(studentId),
+      });
 
-      if (!peer) {
-        setPeerMessage("No peer recommendations found right now. Please try again later.");
+      if (peerSearch.trim()) {
+        params.set("search", peerSearch.trim());
+      }
+
+      if (selectedInterest) {
+        params.set("goal", selectedInterest);
+      }
+
+      const response = await fetch(`${API_BASE}/peers/filter?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error("Could not search for peers right now.");
+      }
+
+      const data = await response.json();
+      const results = Array.isArray(data) ? data : [];
+
+      setPeerResults(results);
+
+      if (results.length === 0) {
+        setPeerMessage("No peers matched your search right now.");
       }
     } catch (error) {
       setPeerMessage(error.message || "Could not search for peers right now.");
@@ -122,47 +140,16 @@ function TeamPage() {
 
   const handleClosePeerModal = () => {
     setShowPeerModal(false);
-    setRecommendedPeer(null);
-  };
-
-  const handleDeclinePeer = async () => {
-    if (!studentId) return;
-
-    const nextDeclined = recommendedPeer?.id
-      ? [...declinedPeerIds, recommendedPeer.id]
-      : [...declinedPeerIds];
-
-    setDeclinedPeerIds(nextDeclined);
-    setIsSearchingPeers(true);
-
-    try {
-      const nextPeer = await fetchRecommendation(nextDeclined);
-      if (!nextPeer) {
-        setShowPeerModal(false);
-        setRecommendedPeer(null);
-        setPeerMessage("No more peer recommendations right now.");
-        return;
-      }
-
-      setRecommendedPeer(nextPeer);
-      setPeerMessage("");
-      setShowPeerModal(true);
-    } catch (error) {
-      setShowPeerModal(false);
-      setRecommendedPeer(null);
-      setPeerMessage(error.message || "Could not search for peers right now.");
-    } finally {
-      setIsSearchingPeers(false);
-    }
+    setselectedPeer(null);
   };
 
   const handleAcceptPeer = async () => {
-    if (!studentId || !recommendedPeer?.id) return;
+    if (!studentId || !selectedPeer?.id) return;
     setIsAssigningPeer(true);
     setPeerMessage("");
 
     try {
-      const response = await fetch(`${API_BASE}/students/${studentId}/assign_peer/${recommendedPeer.id}`, {
+      const response = await fetch(`${API_BASE}/students/${studentId}/assign_peer/${selectedPeer.id}`, {
         method: "POST",
       });
 
@@ -171,7 +158,7 @@ function TeamPage() {
         throw new Error(errorData.detail || "Could not assign this peer.");
       }
 
-      setPeerInfo(recommendedPeer);
+      setPeerInfo(selectedPeer);
       setShowPeerModal(false);
       setPeerMessage("Peer assigned successfully.");
     } catch (error) {
@@ -248,7 +235,7 @@ function TeamPage() {
             ) : (
               <p style={{ color: "#999" }}>No parent linked yet.</p>
             )}
-            
+
           </div>
 
           {/* Peer Card */}
@@ -274,6 +261,61 @@ function TeamPage() {
             ) : (
               <>
                 <p style={{ color: "#999", marginBottom: "1rem" }}>No peer linked yet.</p>
+
+                <input
+                  type="text"
+                  placeholder="Search peers..."
+                  value={peerSearch}
+                  onChange={(e) => setPeerSearch(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.85rem 1rem",
+                    borderRadius: "10px",
+                    border: "1px solid #ddd",
+                    fontSize: "1rem",
+                    marginBottom: "1rem",
+                    outline: "none",
+                  }}
+                />
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    gap: "0.6rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {interestOptions.map((field) => {
+                    const isSelected = selectedInterest === field;
+
+                    return (
+                      <button
+                        key={field}
+                        type="button"
+                        onClick={() =>
+                          setSelectedInterest((prev) => (prev === field ? "" : field))
+                        }
+                        style={{
+                          border: isSelected ? "2px solid #121c34" : "1px solid #e6b6bb",
+                          borderRadius: "1rem",
+                          padding: "0.65rem 0.95rem",
+                          minWidth: "110px",
+                          textAlign: "center",
+                          background: isSelected ? "#f7c5c8" : "#fff",
+                          color: "#121c34",
+                          fontWeight: 600,
+                          fontSize: "0.9rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {field}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <button
                   type="button"
                   onClick={handleSearchPeers}
@@ -286,10 +328,55 @@ function TeamPage() {
                     padding: "0.65rem 1rem",
                     cursor: isSearchingPeers ? "not-allowed" : "pointer",
                     fontWeight: 600,
+                    marginBottom: "1rem",
                   }}
                 >
                   {isSearchingPeers ? "Searching..." : "Search for Peers"}
                 </button>
+
+                {peerResults.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                      marginTop: "0.5rem",
+                      textAlign: "left",
+                    }}
+                  >
+                    {peerResults.map((peer) => (
+                      <button
+                        key={peer.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPeer(peer);
+                          setShowPeerModal(true);
+                        }}
+                        style={{
+                          width: "100%",
+                          background: "#f8f9fa",
+                          border: "1px solid #e9ecef",
+                          borderRadius: "10px",
+                          padding: "0.85rem 1rem",
+                          cursor: "pointer",
+                          textAlign: "left",
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, color: "#1c2740", marginBottom: 4 }}>
+                          {peer.fullName || "Student"}
+                        </div>
+                        <div style={{ color: "#666", fontSize: "0.9rem", marginBottom: 4 }}>
+                          {peer.email}
+                        </div>
+                        {Array.isArray(peer.goals) && peer.goals.length > 0 && (
+                          <div style={{ color: "#999", fontSize: "0.85rem" }}>
+                            {peer.goals.join(", ")}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -327,13 +414,13 @@ function TeamPage() {
             >
               <h3 style={{ marginTop: 0, marginBottom: "0.75rem", color: "#1c2740" }}>Recommended Peer</h3>
 
-              {recommendedPeer ? (
+              {selectedPeer ? (
                 <>
-                  <p style={{ margin: "0 0 0.35rem", fontWeight: 700, color: "#333" }}>{recommendedPeer.fullName || "Student"}</p>
-                  <p style={{ margin: "0 0 0.35rem", color: "#666" }}>Age: {recommendedPeer.age || "Not set"}</p>
+                  <p style={{ margin: "0 0 0.35rem", fontWeight: 700, color: "#333" }}>{selectedPeer.fullName || "Student"}</p>
+                  <p style={{ margin: "0 0 0.35rem", color: "#666" }}>Age: {selectedPeer.age || "Not set"}</p>
                   <p style={{ margin: "0 0 0.4rem", color: "#666", fontWeight: 600 }}>Student goals:</p>
-                  {Array.isArray(recommendedPeer.goals) && recommendedPeer.goals.length > 0 ? (
-                    <p style={{ margin: "0 0 1rem", color: "#999" }}>{recommendedPeer.goals.join(", ")}</p>
+                  {Array.isArray(selectedPeer.goals) && selectedPeer.goals.length > 0 ? (
+                    <p style={{ margin: "0 0 1rem", color: "#999" }}>{selectedPeer.goals.join(", ")}</p>
                   ) : (
                     <p style={{ margin: "0 0 1rem", color: "#999" }}>No goals listed yet.</p>
                   )}
@@ -346,45 +433,35 @@ function TeamPage() {
               <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem" }}>
                 <button
                   type="button"
-                  onClick={handleDeclinePeer}
-                  disabled={isSearchingPeers}
+                  onClick={handleAcceptPeer}
+                  disabled={!selectedPeer || isAssigningPeer}
                   style={{
-                    width: "44px",
-                    height: "44px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "50%",
+                    padding: "0.7rem 1.1rem",
                     border: "none",
-                    backgroundColor: "#f5d2d2",
-                    color: "#8a1f1f",
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    cursor: isSearchingPeers ? "not-allowed" : "pointer",
+                    borderRadius: "8px",
+                    backgroundColor: !selectedPeer || isAssigningPeer ? "#c6e8cf" : "#1c2740",
+                    color: "#fff",
+                    fontWeight: 600,
+                    cursor: !selectedPeer || isAssigningPeer ? "not-allowed" : "pointer",
                   }}
                 >
-                  {isSearchingPeers ? "..." : "✕"}
+                  {isAssigningPeer ? "Assigning..." : "Assign Peer"}
                 </button>
+
                 <button
                   type="button"
-                  onClick={handleAcceptPeer}
-                  disabled={!recommendedPeer || isAssigningPeer}
+                  onClick={handleClosePeerModal}
                   style={{
-                    width: "44px",
-                    height: "44px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "50%",
+                    padding: "0.7rem 1.1rem",
                     border: "none",
-                    backgroundColor: !recommendedPeer || isAssigningPeer ? "#c6e8cf" : "#1fa34a",
+                    borderRadius: "8px",
+                    backgroundColor: "#a52a2a",
                     color: "#fff",
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    cursor: !recommendedPeer || isAssigningPeer ? "not-allowed" : "pointer",
+                    fontWeight: 600,
+                    cursor: "pointer",
                   }}
                 >
-                  {isAssigningPeer ? "..." : "✓"}
+                  Close
                 </button>
               </div>
             </div>

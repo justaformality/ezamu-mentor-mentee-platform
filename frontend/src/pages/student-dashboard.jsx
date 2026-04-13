@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; //new
+import { Link, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -144,6 +144,8 @@ function StudentDashboard() {
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [actionableItems, setActionableItems] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const navigate = useNavigate();
+
   useEffect(() => {
     async function loadDashboard() {
       const stored = localStorage.getItem("user");
@@ -186,6 +188,7 @@ function StudentDashboard() {
           const dateObj = new Date(appt.scheduledAt);
           return {
             id: appt.id,
+            title: appt.title || "",
             coachName: coachMap[appt.coach_id] || `Coach ${appt.coach_id}`,
             date: dateObj.toLocaleDateString("en-US", {
               month: "short",
@@ -207,9 +210,17 @@ function StudentDashboard() {
           completed: item.completed,
           coach: item.assigned_by_name || item.coach_name || "Coach",
           dueDate: formatDueDateTime(item.due_date, item.due_time),
+          due_date: item.due_date || "",
+          due_time: item.due_time || "",
           priority: (item.priority || "medium").toLowerCase(),
         }));
 
+        const initialCompletedMap = {};
+        mappedActionItems.forEach((item) => {
+          initialCompletedMap[item.id] = !!item.completed;
+        });
+
+        setCompletedItems(initialCompletedMap);
         setUpcomingAppointments(mappedAppointments);
         setActionableItems(mappedActionItems);
       } catch (err) {
@@ -230,37 +241,6 @@ function StudentDashboard() {
     "Nina Perez": "/src/assets/imgs/coach-test.jpg",
   };
 
-  // //dummy data for now - will be replaced with API calls to fetch real data for the logged in student
-  // const upcomingAppointments = [
-  //   {
-  //     id: 1,
-  //     coachName: "Sarah Johnson",
-  //     date: "Feb 12, 2026",
-  //     time: "2:00 PM",
-  //     duration: "30 min",
-  //   },
-  //   {
-  //     id: 2,
-  //     coachName: "Michael Chen",
-  //     date: "Feb 14, 2026",
-  //     time: "4:30 PM",
-  //     duration: "45 min",
-  //   },
-  //   {
-  //     id: 3,
-  //     coachName: "Nina Perez",
-  //     date: "Feb 1, 2026",
-  //     time: "1:00 PM",
-  //     duration: "30 min",
-  //   },
-  // ];
-
-  // const assignedPeer = { //dummy data!!
-  //   name: "Alex Rivera",
-  //   email: "alex.rivera@email.com",
-  //   major: "Computer Science",
-  // };
-
   const toggleComplete = (itemId) => {
     setCompletedItems((prev) => ({
       ...prev,
@@ -268,42 +248,6 @@ function StudentDashboard() {
     }));
   };
 
-  // const actionableItems = [
-  //   {
-  //     id: 1,
-  //     title: "Complete Strengths Assessment",
-  //     dueDate: "Feb 10, 2026",
-  //     coach: "Sarah Johnson",
-  //     description: "Assessment to identify your key strengths",
-  //     priority: "high",
-  //   },
-  //   {
-  //     id: 2,
-  //     title: "Review Career Path Plan",
-  //     dueDate: "Feb 15, 2026",
-  //     coach: "Michael Chen",
-  //     description: "Review and provide feedback on your 5-year career plan",
-  //     priority: "medium",
-  //   },
-  //   {
-  //     id: 3,
-  //     title: "Practice Public Speaking",
-  //     dueDate: "Feb 28, 2026",
-  //     coach: "Sarah Johnson",
-  //     description: "Work on presentation skills - 15 minutes daily",
-  //     priority: "medium",
-  //   },
-  //   {
-  //     id: 4,
-  //     title: "Network with 3 Professionals",
-  //     dueDate: "Mar 10, 2026",
-  //     coach: "Michael Chen",
-  //     description: "Connect with professionals in your target field",
-  //     priority: "low",
-  //   },
-  // ];
-
-  //color of to do list priority indicators
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "high":
@@ -344,12 +288,18 @@ function StudentDashboard() {
 
   const incompleteItems = sortedItems.filter((item) => !completedItems[item.id]);
   const completedListItems = sortedItems.filter((item) => completedItems[item.id]);
+  const dashboardTaskPreview = sortedItems.slice(0, 5);
+  const hasMoreTasks = sortedItems.length > 5;
 
   const sortedAppointments = [...upcomingAppointments].sort((a, b) => {
     const dateA = new Date(`${a.date} ${a.time}`);
     const dateB = new Date(`${b.date} ${b.time}`);
     return dateA - dateB;
   });
+
+  function handleAppointmentClick(appointmentId) {
+    navigate(`/appointment-details/${appointmentId}`);
+  }
 
   return (
     <main
@@ -375,10 +325,7 @@ function StudentDashboard() {
             alignItems: "start",
           }}
         >
-
-          {/* LEFT COLUMN */}
           <div>
-            {/* Upcoming Appointments */}
             <div
               style={{
                 backgroundColor: "#f8f9fa",
@@ -394,17 +341,19 @@ function StudentDashboard() {
 
               <p style={{ marginTop: "0", marginBottom: "1rem", color: "#666", fontSize: "0.9rem" }}>
                 {upcomingAppointments.length > 0
-                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). The next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.` //changed upcoming to sorted bc time
+                  ? `You have ${upcomingAppointments.length} upcoming appointment(s). The next one is ${sortedAppointments[0].date} at ${sortedAppointments[0].time}.`
                   : "No upcoming appointments scheduled."}
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {sortedAppointments.map((appointment) => {
-                  const { day, month } = formatDateBadge(appointment.date); //added this line!
+                  const { day, month } = formatDateBadge(appointment.date);
                   const isCoachImage = coachImages[appointment.coachName];
                   return (
-                    <div
+                    <button
                       key={appointment.id}
+                      type="button"
+                      onClick={() => handleAppointmentClick(appointment.id)}
                       style={{
                         backgroundColor: "#fff",
                         display: "flex",
@@ -416,7 +365,6 @@ function StudentDashboard() {
                         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                       }}
                     >
-                      {/*adding this badge, adding below this */}
                       <div
                         style={{
                           minWidth: "50px",
@@ -431,7 +379,7 @@ function StudentDashboard() {
                         <div style={{ fontSize: "1.2rem" }}>{day}</div>
                         <div style={{ fontSize: "0.75rem", textTransform: "uppercase" }}>{month}</div>
                       </div>
-                      {/*adding above this */}
+
                       {isCoachImage && (
                         <img
                           src={isCoachImage}
@@ -445,10 +393,25 @@ function StudentDashboard() {
                           }}
                         />
                       )}
+
                       <div style={{ flex: 1 }}>
+                        {appointment.title && appointment.title !== "Coaching Session" && (
+                          <p
+                            style={{
+                              margin: "0 0 0.35rem 0",
+                              fontWeight: "700",
+                              fontSize: "1rem",
+                              color: "#1c2740",
+                            }}
+                          >
+                            {appointment.title}
+                          </p>
+                        )}
+
                         <p style={{ margin: "0 0 0.5rem 0", fontWeight: "600", color: "#333" }}>
                           {appointment.coachName}
                         </p>
+
                         <p
                           style={{
                             margin: "0.25rem 0",
@@ -458,6 +421,7 @@ function StudentDashboard() {
                         >
                           📍 {appointment.date} at {appointment.time}
                         </p>
+
                         <p
                           style={{
                             margin: "0.25rem 0",
@@ -468,13 +432,12 @@ function StudentDashboard() {
                           {appointment.duration}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Quick Access Tiles */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
               <Link
                 to="/smartgoals"
@@ -539,7 +502,6 @@ function StudentDashboard() {
               </Link>
             </div>
 
-            {/* Assessment Results */}
             <div
               style={{
                 backgroundColor: "#f8f9fa",
@@ -553,13 +515,11 @@ function StudentDashboard() {
                 Assessment Results
               </h2>
 
-
               <p style={{ marginTop: "0", marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
                 {topInnerHero
                   ? `Your top Inner Hero is ${topInnerHero}.`
                   : "No assessment results yet."}
               </p>
-
 
               {topInnerHero && (
                 <button
@@ -666,7 +626,6 @@ function StudentDashboard() {
             </div>
           )}
 
-          {/* RIGHT COLUMN */}
           <div
             style={{
               backgroundColor: "#f8f9fa",
@@ -679,7 +638,7 @@ function StudentDashboard() {
             <h2 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", color: "#333" }}>
               To Do Items
             </h2>
-            {/*adding below this for progress bar! */}
+
             <div style={{ marginBottom: "1.25rem" }}>
               <div
                 style={{
@@ -702,11 +661,13 @@ function StudentDashboard() {
                 {progressPercent}% completed
               </p>
             </div>
-            {/*adding above this for progress bar! */}
 
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {incompleteItems.map((item) => { //changing actionableitems to incompleteItems
-                const isCompleted = completedItems[item.id];
+              {dashboardTaskPreview.map((item) => {
+                const isCompleted = completedListItems.some(
+                  (completedItem) => completedItem.id === item.id
+                );
+
                 return (
                   <div
                     key={item.id}
@@ -717,7 +678,7 @@ function StudentDashboard() {
                       borderLeft: `4px solid ${getPriorityColor(item.priority)}`,
                       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                       opacity: isCompleted ? 0.6 : 1,
-                      //textDecoration: isCompleted ? "line-through" : "none",
+                      textDecoration: isCompleted ? "line-through" : "none",
                     }}
                   >
                     <div
@@ -783,66 +744,27 @@ function StudentDashboard() {
                   </div>
                 );
               })}
-              {/*adding completed divider*/}
-              {completedListItems.length > 0 && (
-                <div
+
+              {hasMoreTasks && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/tasks")}
                   style={{
-                    margin: "1rem 0 0.5rem",
-                    fontSize: "0.75rem",
-                    fontWeight: "600",
-                    color: "#999",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05rem",
+                    marginTop: "0.5rem",
+                    padding: "0.8rem 1rem",
+                    border: "none",
+                    borderRadius: "10px",
+                    background: "#394c7a",
+                    color: "#fff",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    width: "100%",
                   }}
                 >
-                  Completed
-                </div>
+                  Show More Tasks
+                </button>
               )}
-              {completedListItems.map((item) => {
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      backgroundColor: "#fff",
-                      padding: "1.25rem",
-                      borderRadius: "6px",
-                      borderLeft: `4px solid ${getPriorityColor(item.priority)}`,
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                      opacity: 0.6,
-                      textDecoration: "line-through",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "start",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={true}
-                        onChange={() => toggleComplete(item.id)}
-                        style={{
-                          width: "20px",
-                          height: "20px",
-                          cursor: "pointer",
-                          marginRight: "0.75rem",
-                          marginTop: "0.125rem",
-                          flexShrink: 0,
-                        }}
-                      />
-                      <p style={{ margin: "0", fontWeight: "600", flex: 1 }}>
-                        {item.title}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
-
-
           </div>
         </div>
       </div>

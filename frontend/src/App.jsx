@@ -18,6 +18,8 @@ import TeamPage from "./pages/teampage.jsx";
 import StudentInfo from "./pages/student-info.jsx";
 import ParentDashboard from "./pages/parent-dashbaord.jsx";
 import SmartGoals from "./pages/smartgoals.jsx";
+import AppointmentDetails from "./pages/appointment-details.jsx";
+import TasksPage from "./pages/tasks-page.jsx";
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
         <Route path="/student-info/:studentId" element={<StudentInfo />} />
         <Route path="/parent-dashboard" element={<ParentDashboard />} />
         <Route path="/smartgoals" element={<SmartGoals />} />
+        <Route path="/appointment-details/:appointmentId" element={<AppointmentDetails />} />
+        <Route path="/tasks" element={<TasksPage />} />
       </Routes>
     </Router>
   );

@@ -3,12 +3,18 @@ import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-function formatAppointmentCard(scheduledAt, studentName = "Student") {
+function formatAppointmentCard(
+  appointmentId,
+  scheduledAt,
+  studentName = "Student",
+  title = ""
+) {
   const d = new Date(scheduledAt);
 
   return {
-    id: `${scheduledAt}-${studentName}`,
+    id: appointmentId,
     name: studentName,
+    title,
     scheduledAt,
     rawDate: scheduledAt.slice(0, 10),
     rawTime: scheduledAt.slice(11, 16),
@@ -174,7 +180,12 @@ function CoachDashboard() {
 
       const mapped = (Array.isArray(appointmentsData) ? appointmentsData : [])
         .map((appt) =>
-          formatAppointmentCard(appt.scheduledAt, studentMap[appt.student_id] || `Student ${appt.student_id}`)
+          formatAppointmentCard(
+            appt.id,
+            appt.scheduledAt,
+            studentMap[appt.student_id] || `Student ${appt.student_id}`,
+            appt.title || ""
+          )
         )
         .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
@@ -186,6 +197,10 @@ function CoachDashboard() {
     } finally {
       setAppointmentsLoading(false);
     }
+  }
+
+  function handleAppointmentClick(appointmentId) {
+    navigate(`/appointment-details/${appointmentId}`);
   }
 
   async function loadAvailability(coachId) {
@@ -488,7 +503,7 @@ function CoachDashboard() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1.2fr 0.8fr",
+            gridTemplateColumns: "0.8fr 0.8fr",
             gap: "2rem",
             alignItems: "start",
           }}
@@ -523,9 +538,12 @@ function CoachDashboard() {
               ) : (
                 <div style={{ width: "100%", marginTop: 8 }}>
                   {appointments.map((appt) => (
-                    <div
+                    <button
                       key={appt.id}
+                      type="button"
+                      onClick={() => handleAppointmentClick(appt.id)}
                       style={{
+                        width: "100%",
                         display: "flex",
                         alignItems: "center",
                         background: "#f8f8f8",
@@ -567,6 +585,18 @@ function CoachDashboard() {
                       </div>
 
                       <div style={{ flex: 1 }}>
+                        {appt.title && appt.title !== "Coaching Session" && (
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: 16,
+                              color: "#1c2740",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {appt.title}
+                          </div>
+                        )}
                         <div
                           style={{
                             fontWeight: 600,
@@ -582,7 +612,7 @@ function CoachDashboard() {
                         </div>
                         <div style={{ color: "#888", fontSize: 13 }}>{appt.duration}</div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -737,12 +767,23 @@ function CoachDashboard() {
                         color: "#1c2740",
                         fontWeight: 500,
                         fontSize: 17,
-                        borderRadius: 10,
+                        borderRadius: 12,
                         padding: "0.85rem 0.75rem",
                         marginBottom: 10,
-                        border: "1.5px solid transparent",
+                        border: "1.5px solid #e2e6f0",   // 👈 adds box outline
                         background: "#fff",
                         cursor: "pointer",
+                        transition: "all 0.15s ease",     // 👈 smooth hover
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.04)", // 👈 subtle depth
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f5f7ff";
+                        e.currentTarget.style.borderColor = "#c9d2ff";
+                      }}
+
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "#fff";
+                        e.currentTarget.style.borderColor = "#e2e6f0";
                       }}
                     >
                       <span>{student.fullName || student.name || student.email}</span>
