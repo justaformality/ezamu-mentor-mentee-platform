@@ -40,7 +40,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-DEMO_ALL_STUDENTS_FOR_COACH = True
+DEMO_ALL_STUDENTS_FOR_COACH = False
 
 
 class User(Base):
