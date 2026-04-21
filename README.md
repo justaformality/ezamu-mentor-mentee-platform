@@ -67,8 +67,8 @@ PostgreSQL
 ## Local Setup Instructions
 ```bash
 1. Clone the Repository
-git clone <your-repository-url>
-cd <your-project-folder>
+git clone https://github.com/justaformality/ezamu-mentor-mentee-platform/
+cd ezamu-mentor-mentee-platform
 ```
 In the frontend and backend folders will be a detailed README.md detailing how to run each one locally.
 
